@@ -25,11 +25,11 @@ const TopNav = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-800 bg-slate-950/95 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 py-4 xl:px-12">
-        <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
+      <div className="relative mx-auto flex min-h-[60px] max-w-[1400px] items-center justify-between gap-3 px-4 py-2 xl:px-12">
+        <div className="flex min-w-0 items-center gap-3">
           <button
-            className="inline-flex items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/80 p-2 text-slate-200 transition hover:bg-slate-800 md:hidden"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-800 bg-slate-900/80 p-2 text-slate-200 transition hover:bg-slate-800 md:hidden"
             onClick={() => setIsMobileMenuOpen((value) => !value)}
             aria-label="Toggle mobile navigation"
           >
@@ -37,56 +37,56 @@ const TopNav = () => {
           </button>
           <Link to="/dashboard">
             <motion.div
-              className="rounded-2xl bg-brand-500/15 px-3 py-2 text-brand-100 ring-1 ring-brand-500/20"
+              className="rounded-xl bg-brand-500/15 px-3 py-1.5 text-sm font-medium text-brand-100 ring-1 ring-brand-500/20"
               whileHover={{ scale: 1.05 }}
             >
               SegLabel AI
             </motion.div>
           </Link>
-          <nav className="hidden items-center gap-2 md:flex">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link key={item.path} to={item.path}>
-                  <motion.div
-                    className={`rounded-2xl px-3 py-2 text-sm transition ${
-                      isActive ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                    }`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {item.label}
-                  </motion.div>
-                </Link>
-              );
-            })}
-          </nav>
         </div>
-        <div className="flex items-center gap-3">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 lg:flex">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link key={item.path} to={item.path}>
+                <motion.div
+                  className={`rounded-xl px-3 py-1.5 text-[13px] whitespace-nowrap transition ${
+                    isActive ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {item.label}
+                </motion.div>
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="flex shrink-0 items-center justify-end gap-2">
           {[Bell, Settings].map((Icon, idx) => (
             <motion.button
               key={idx}
-              className="rounded-2xl border border-slate-800 bg-slate-900/80 p-2 text-slate-300 transition hover:bg-slate-800"
+              className="rounded-xl border border-slate-800 bg-slate-900/80 p-1.5 text-slate-300 transition hover:bg-slate-800"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              <Icon size={18} />
+              <Icon size={16} />
             </motion.button>
           ))}
           <motion.button
-            className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-900/80 px-3 py-2 text-slate-200 transition hover:bg-slate-800"
+            className="hidden items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-sm text-slate-200 transition hover:bg-slate-800 sm:flex"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <User size={18} />
+            <User size={16} />
             <span>Артем</span>
           </motion.button>
           <motion.button
-            className="rounded-2xl border border-slate-800 bg-slate-900/80 p-2 text-slate-300 transition hover:bg-slate-800"
+            className="rounded-xl border border-slate-800 bg-slate-900/80 p-1.5 text-slate-300 transition hover:bg-slate-800"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
-            <LogOut size={18} />
+            <LogOut size={16} />
           </motion.button>
         </div>
       </div>

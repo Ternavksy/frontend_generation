@@ -14,8 +14,10 @@ const tools = [
 const WorkspacePage = () => (
   <PageTransition>
     <div className="mx-auto grid max-w-[1400px] gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-      <Sidebar />
-      <section className="space-y-6">
+      <div className="xl:sticky xl:top-20 xl:self-start">
+        <Sidebar />
+      </div>
+      <section className="min-w-0 space-y-6">
       <motion.div 
         className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-6"
         initial={{ opacity: 0, y: 20 }}
@@ -24,8 +26,8 @@ const WorkspacePage = () => (
         <h1 className="text-3xl font-semibold text-white">Рабочая область аннотатора</h1>
         <p className="mt-2 text-slate-400">CVAT-подобный интерфейс для редактирования масок, управления классами и сравнения результатов.</p>
       </motion.div>
-      <div className="grid gap-6 xl:grid-cols-[1.65fr_0.35fr]">
-        <div className="space-y-6">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.65fr)]">
+        <div className="min-w-0 space-y-6">
           <WorkspaceCanvas />
           <div className="grid gap-4 sm:grid-cols-2">
             {tools.map((tool, idx) => (
@@ -43,7 +45,7 @@ const WorkspacePage = () => (
             ))}
           </div>
         </div>
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <ModelPanel />
           <motion.div 
             className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5"
