@@ -6,6 +6,7 @@ import { useState } from 'react';
 const navItems = [
   { label: 'Проекты', path: '/projects' },
   { label: 'Датасеты', path: '/upload' },
+  { label: 'Рабочая область', path: '/workspace' },
   { label: 'Модели', path: '/models' },
   { label: 'Профиль', path: '/profile' },
   { label: 'Оплата', path: '/billing' }
@@ -14,6 +15,7 @@ const navItems = [
 const mobileItems = [
   { label: 'Дашборд', path: '/dashboard', icon: Workflow },
   { label: 'Датасеты', path: '/projects', icon: Database },
+  { label: 'Рабочая область', path: '/workspace', icon: Workflow },
   { label: 'Оплата', path: '/billing', icon: CreditCard },
   { label: 'Загрузка', path: '/upload', icon: Database },
   { label: 'Модели', path: '/models', icon: Workflow },

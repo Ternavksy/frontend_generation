@@ -2,6 +2,7 @@ import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import { Activity, BadgeCheck, Clock3, Shield, Users } from 'lucide-react';
+import { useState } from 'react';
 
 const services = [
   { name: 'SAM2', port: 8001, status: 'online' },
@@ -22,10 +23,13 @@ const moderationQueue = [
   { user: 'Екатерина Белова', role: 'Администратор', project: 'Внутренний контур', status: 'Назначение роли' }
 ];
 
-const AdminPage = () => (
-  <PageTransition>
-    <div className="mx-auto grid max-w-[1400px] gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-      <Sidebar />
+const AdminPage = () => {
+  const [selectedTool, setSelectedTool] = useState<string | null>(null);
+
+  return (
+    <PageTransition>
+      <div className="mx-auto grid max-w-[1400px] gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <Sidebar selectedTool={selectedTool} onToolSelect={setSelectedTool} />
       <section className="space-y-6">
         <motion.div
           className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-6"
@@ -168,8 +172,9 @@ const AdminPage = () => (
           </motion.div>
         </div>
       </section>
-    </div>
-  </PageTransition>
-);
+      </div>
+    </PageTransition>
+  );
+};
 
 export default AdminPage;

@@ -1,19 +1,70 @@
-import { Stage, Layer, Rect, Image as KonvaImage } from 'react-konva';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Stage, Layer, Rect, Image as KonvaImage, Text } from 'react-konva';
+import { useEffect, useRef, useState } from 'react';
 
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 675;
 
 const usePlaceholderImage = () => {
-  return useMemo(() => {
+  const [image, setImage] = useState<HTMLImageElement | HTMLCanvasElement | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
     const img = new window.Image();
+    img.onload = () => {
+      setImage(img);
+      setLoading(false);
+    };
+    img.onerror = () => {
+      // Fallback: create a simple colored rectangle
+      const canvas = document.createElement('canvas');
+      canvas.width = CANVAS_WIDTH;
+      canvas.height = CANVAS_HEIGHT;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const gradient = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        gradient.addColorStop(0, '#3b82f6');
+        gradient.addColorStop(1, '#1e40af');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '48px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Загрузка...', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+      }
+      setImage(canvas);
+      setLoading(false);
+    };
+    img.crossOrigin = 'anonymous';
     img.src = 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80';
-    return img;
   }, []);
+
+  return { image, loading };
 };
 
-const WorkspaceCanvas = () => {
-  const image = usePlaceholderImage();
+interface ObjectData {
+  id: number;
+  class: string;
+  coords: { x: number; y: number; width: number; height: number };
+}
+
+interface WorkspaceCanvasProps {
+  selectedObject: number | null;
+  objects: ObjectData[];
+  classVisibility: Record<string, boolean>;
+  classOpacity: Record<string, number>;
+  globalOpacity?: number;
+  onGlobalOpacityChange?: (opacity: number) => void;
+}
+
+const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({ 
+  selectedObject, 
+  objects, 
+  classVisibility, 
+  classOpacity,
+  globalOpacity = 70,
+  onGlobalOpacityChange
+}) => {
+  const { image, loading } = usePlaceholderImage();
   const containerRef = useRef<HTMLDivElement>(null);
   const [stageWidth, setStageWidth] = useState(CANVAS_WIDTH);
 
@@ -47,7 +98,14 @@ const WorkspaceCanvas = () => {
         </div>
         <div className="flex flex-wrap items-center gap-2 text-slate-400">
           <span>Прозрачность</span>
-          <input type="range" min="0" max="100" defaultValue="70" className="h-2 w-32 accent-brand-500" />
+          <input 
+            type="range" 
+            min="0" 
+            max="100" 
+            value={globalOpacity} 
+            onChange={(e) => onGlobalOpacityChange?.(parseInt(e.target.value))}
+            className="h-2 w-32 accent-brand-500" 
+          />
         </div>
       </div>
       <div
@@ -55,16 +113,58 @@ const WorkspaceCanvas = () => {
         className="relative min-w-0 overflow-hidden rounded-3xl border border-slate-800 bg-slate-900"
       >
         <div className="flex justify-center">
-          <Stage width={stageWidth} height={stageHeight} className="h-auto max-w-full">
+          <Stage width={stageWidth} height={stageHeight} className="h-auto max-w-full bg-slate-700 border border-red-500">
             <Layer scaleX={stageWidth / CANVAS_WIDTH} scaleY={stageHeight / CANVAS_HEIGHT}>
-              <KonvaImage image={image} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} opacity={0.92} />
-              <Rect x={120} y={100} width={320} height={220} stroke="#38bdf8" strokeWidth={3} dash={[10, 6]} />
-              <Rect x={540} y={250} width={260} height={180} stroke="#f472b6" strokeWidth={3} opacity={0.7} />
+              {/* Background rectangle */}
+              <Rect
+                x={0}
+                y={0}
+                width={CANVAS_WIDTH}
+                height={CANVAS_HEIGHT}
+                fill="#64748b"
+              />
+              {image && <KonvaImage image={image} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} opacity={globalOpacity / 100} />}
+              {loading && (
+                <Rect
+                  x={0}
+                  y={0}
+                  width={CANVAS_WIDTH}
+                  height={CANVAS_HEIGHT}
+                  fill="#f59e0b"
+                />
+              )}
+              {/* Test text */}
+              <Text
+                x={50}
+                y={50}
+                text={loading ? "Загрузка..." : "Изображение загружено"}
+                fontSize={24}
+                fill="#ffffff"
+              />
+              {objects.map((obj) => {
+                const isVisible = classVisibility[obj.class] !== false;
+                const isSelected = selectedObject === obj.id;
+                const opacity = isVisible ? (isSelected ? 1 : classOpacity[obj.class] || 0.7) : 0.2;
+                return (
+                  <Rect
+                    key={obj.id}
+                    x={obj.coords.x}
+                    y={obj.coords.y}
+                    width={obj.coords.width}
+                    height={obj.coords.height}
+                    stroke={isSelected ? "#38bdf8" : "#f472b6"}
+                    strokeWidth={isSelected ? 4 : 3}
+                    opacity={opacity}
+                    dash={isSelected ? [10, 6] : undefined}
+                  />
+                );
+              })}
             </Layer>
           </Stage>
         </div>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-3xl bg-gradient-to-t from-slate-950/95 to-transparent p-4 text-sm text-slate-200">
           Режим: <span className="font-semibold text-white">Редактирование масок</span>
+          {loading && <span className="ml-4 text-yellow-400">Загрузка изображения...</span>}
         </div>
       </div>
     </div>

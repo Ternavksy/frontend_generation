@@ -1,4 +1,3 @@
-import Sidebar from '../components/Sidebar';
 import LoadingIndicator from '../components/LoadingIndicator';
 import PageTransition from '../components/PageTransition';
 import { motion } from 'framer-motion';
@@ -12,8 +11,7 @@ const stats = [
 
 const DashboardPage = () => (
   <PageTransition>
-    <div className="mx-auto grid max-w-[1400px] gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-      <Sidebar />
+    <div className="mx-auto max-w-[1400px]">
       <section className="space-y-6">
       <motion.div 
         className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-6"

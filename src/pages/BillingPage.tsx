@@ -1,4 +1,3 @@
-import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import { BadgeCheck, CreditCard, Receipt, ShieldCheck, Sparkles, Zap } from 'lucide-react';
@@ -41,8 +40,7 @@ const limits = [
 
 const BillingPage = () => (
   <PageTransition>
-    <div className="mx-auto grid max-w-[1400px] gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-      <Sidebar />
+    <div className="mx-auto max-w-[1400px]">
       <section className="space-y-6">
         <motion.div
           className="overflow-hidden rounded-[2rem] border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-brand-500/10 p-6"
