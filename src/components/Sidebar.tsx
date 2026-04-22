@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ selectedTool, onToolSelect }) => {
         return (
           <motion.div
             key={tool.name}
-            className={`flex items-center gap-3 rounded-3xl px-4 py-3 transition cursor-pointer ${
+            className={`flex cursor-pointer items-center gap-3 rounded-3xl px-4 py-3 transition ${
               isSelected ? 'bg-brand-500/20 border border-brand-500' : 'text-slate-200 hover:bg-slate-800'
             }`}
             whileHover={{ scale: 1.02 }}

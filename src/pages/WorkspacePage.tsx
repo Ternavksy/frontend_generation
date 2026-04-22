@@ -34,13 +34,13 @@ const classes: ClassItem[] = [
 
 const WorkspacePage = () => {
   const [selectedObject, setSelectedObject] = useState<number | null>(null);
+  const [baseObjects, setBaseObjects] = useState<ObjectData[]>(objects);
   const [classList, setClassList] = useState<ClassItem[]>(classes);
   const [newClass, setNewClass] = useState('');
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [selectedSegmentationModel, setSelectedSegmentationModel] = useState<string | null>(null);
   const [selectedDetectionModel, setSelectedDetectionModel] = useState<string | null>(null);
   const [segmentedObjects, setSegmentedObjects] = useState<ObjectData[]>([]);
-  const [globalOpacity, setGlobalOpacity] = useState(70);
 
   const addClass = () => {
     if (newClass.trim()) {
@@ -49,7 +49,19 @@ const WorkspacePage = () => {
     }
   };
 
-  const allObjects = [...objects, ...segmentedObjects];
+  const updateObjectCoords = (id: number, coords: ObjectData['coords']) => {
+    const update = (obj: ObjectData) => obj.id === id ? { ...obj, coords } : obj;
+    setBaseObjects((items) => items.map(update));
+    setSegmentedObjects((items) => items.map(update));
+  };
+
+  const deleteObject = (id: number) => {
+    setBaseObjects((items) => items.filter((obj) => obj.id !== id));
+    setSegmentedObjects((items) => items.filter((obj) => obj.id !== id));
+    setSelectedObject((current) => current === id ? null : current);
+  };
+
+  const allObjects = [...baseObjects, ...segmentedObjects];
 
   const classOpacity = classList.reduce((acc, cls) => {
     acc[cls.name] = cls.opacity / 100;
@@ -100,16 +112,6 @@ const WorkspacePage = () => {
         </motion.div>
         <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.65fr)]">
           <div className="min-w-0 space-y-6">
-            <WorkspaceCanvas 
-              selectedObject={selectedObject} 
-              objects={allObjects} 
-              classVisibility={classVisibility} 
-              classOpacity={classOpacity}
-              globalOpacity={globalOpacity}
-              onGlobalOpacityChange={setGlobalOpacity}
-            />
-          </div>
-          <div className="min-w-0 space-y-6">
             <ModelPanel 
               selectedSegmentationModel={selectedSegmentationModel}
               selectedDetectionModel={selectedDetectionModel}
@@ -117,6 +119,18 @@ const WorkspacePage = () => {
               onDetectionModelSelect={setSelectedDetectionModel}
               onRunSegmentation={runSegmentation}
             />
+            <WorkspaceCanvas 
+              selectedObject={selectedObject} 
+              objects={allObjects} 
+              classVisibility={classVisibility} 
+              classOpacity={classOpacity}
+              selectedTool={selectedTool}
+              onObjectSelect={setSelectedObject}
+              onObjectChange={updateObjectCoords}
+              onObjectDelete={deleteObject}
+            />
+          </div>
+          <div className="min-w-0 space-y-6">
             <motion.div 
               className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5"
               initial={{ opacity: 0, x: 20 }}
@@ -127,9 +141,9 @@ const WorkspacePage = () => {
                 {allObjects.map((obj) => (
                   <motion.div
                     key={obj.id}
-                    className={`rounded-3xl border px-4 py-3 cursor-pointer transition ${
+                    className={`rounded-3xl border px-4 py-3 transition ${
                       selectedObject === obj.id ? 'border-brand-500 bg-brand-500/10' : 'border-slate-800 bg-slate-950/90'
-                    }`}
+                    } ${classVisibility[obj.class] ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
                     onClick={() => {
                       if (classVisibility[obj.class]) {
                         setSelectedObject(obj.id);
@@ -138,7 +152,24 @@ const WorkspacePage = () => {
                     whileHover={{ scale: 1.02 }}
                   >
                     <div className="text-sm text-slate-400">{obj.class}</div>
-                    <div className="text-xs text-slate-500">x:{obj.coords.x} y:{obj.coords.y} w:{obj.coords.width} h:{obj.coords.height}</div>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {(['x', 'y', 'width', 'height'] as const).map((key) => (
+                        <label key={key} className="text-xs text-slate-500">
+                          {key}
+                          <input
+                            type="number"
+                            value={obj.coords[key]}
+                            disabled={!classVisibility[obj.class]}
+                            onClick={(event) => event.stopPropagation()}
+                            onChange={(event) => updateObjectCoords(obj.id, {
+                              ...obj.coords,
+                              [key]: Number(event.target.value)
+                            })}
+                            className="mt-1 w-full rounded-2xl border border-slate-800 bg-slate-950 px-2 py-1 text-slate-200 disabled:opacity-50"
+                          />
+                        </label>
+                      ))}
+                    </div>
                   </motion.div>
                 ))}
               </div>

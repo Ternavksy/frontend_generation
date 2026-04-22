@@ -52,8 +52,10 @@ interface WorkspaceCanvasProps {
   objects: ObjectData[];
   classVisibility: Record<string, boolean>;
   classOpacity: Record<string, number>;
-  globalOpacity?: number;
-  onGlobalOpacityChange?: (opacity: number) => void;
+  selectedTool: string | null;
+  onObjectSelect: (id: number) => void;
+  onObjectChange: (id: number, coords: ObjectData['coords']) => void;
+  onObjectDelete: (id: number) => void;
 }
 
 const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({ 
@@ -61,8 +63,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   objects, 
   classVisibility, 
   classOpacity,
-  globalOpacity = 70,
-  onGlobalOpacityChange
+  selectedTool,
+  onObjectSelect,
+  onObjectChange,
+  onObjectDelete
 }) => {
   const { image, loading } = usePlaceholderImage();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,21 +95,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
   return (
     <div className="min-w-0 rounded-3xl border border-slate-800 bg-slate-950/70 p-4">
-      <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mb-4">
         <div>
           <h2 className="text-xl font-semibold text-white">Рабочая область</h2>
           <p className="text-sm text-slate-400">Интерактивный холст для редактирования масок и bounding box.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-slate-400">
-          <span>Прозрачность</span>
-          <input 
-            type="range" 
-            min="0" 
-            max="100" 
-            value={globalOpacity} 
-            onChange={(e) => onGlobalOpacityChange?.(parseInt(e.target.value))}
-            className="h-2 w-32 accent-brand-500" 
-          />
         </div>
       </div>
       <div
@@ -123,7 +116,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 height={CANVAS_HEIGHT}
                 fill="#64748b"
               />
-              {image && <KonvaImage image={image} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} opacity={globalOpacity / 100} />}
+              {image && <KonvaImage image={image} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} opacity={0.92} />}
               {loading && (
                 <Rect
                   x={0}
@@ -156,6 +149,27 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     strokeWidth={isSelected ? 4 : 3}
                     opacity={opacity}
                     dash={isSelected ? [10, 6] : undefined}
+                    draggable={isVisible && selectedTool !== 'Ластик'}
+                    onClick={() => {
+                      if (!isVisible) return;
+                      if (selectedTool === 'Ластик') {
+                        onObjectDelete(obj.id);
+                        return;
+                      }
+                      onObjectSelect(obj.id);
+                    }}
+                    onTap={() => {
+                      if (!isVisible) return;
+                      onObjectSelect(obj.id);
+                    }}
+                    onDragEnd={(event) => {
+                      if (!isVisible) return;
+                      onObjectChange(obj.id, {
+                        ...obj.coords,
+                        x: Math.round(event.target.x()),
+                        y: Math.round(event.target.y())
+                      });
+                    }}
                   />
                 );
               })}
@@ -164,6 +178,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
         </div>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 rounded-b-3xl bg-gradient-to-t from-slate-950/95 to-transparent p-4 text-sm text-slate-200">
           Режим: <span className="font-semibold text-white">Редактирование масок</span>
+          {selectedTool && <span className="ml-4 text-brand-200">Инструмент: {selectedTool}</span>}
           {loading && <span className="ml-4 text-yellow-400">Загрузка изображения...</span>}
         </div>
       </div>
