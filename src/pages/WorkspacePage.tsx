@@ -6,6 +6,7 @@ import WorkspaceCanvas, {
   type ActiveToolMode,
   type AnnotationObject,
   type Area,
+  type CompareViewMode,
   type PolygonPoint,
   type ToolMode,
   type WorkspaceNavItem
@@ -37,6 +38,10 @@ interface WorkspaceState {
   classList: ClassItem[];
   activeTool: ActiveToolMode;
   activeLabel: string;
+  maskOpacity: number;
+  compareViewMode: CompareViewMode;
+  compareLeftSource: string;
+  compareRightSource: string;
   selectedSegmentationModels: string[];
   selectedDetectionModels: string[];
   activeNav: NavKey;
@@ -90,6 +95,7 @@ const initialObjects: AnnotationObject[] = [
     color: '#7CFC8A',
     type: 'box',
     source: 'model',
+    modelName: 'YOLO World',
     score: 0.94,
     area: makeArea(470, 126, 182, 470)
   },
@@ -99,6 +105,7 @@ const initialObjects: AnnotationObject[] = [
     color: '#7CFC8A',
     type: 'box',
     source: 'model',
+    modelName: 'Grounding DINO',
     score: 0.92,
     area: makeArea(660, 100, 212, 510)
   }
@@ -127,11 +134,26 @@ const toolOptions: Array<{ id: ToolMode; label: string }> = [
   { id: 'select', label: 'Выбор' },
   { id: 'box', label: 'Box' },
   { id: 'polygon', label: 'Polygon' },
+  { id: 'brush', label: 'Кисть' },
+  { id: 'eraser', label: 'Ластик' },
+  { id: 'split', label: 'Разделение' },
   { id: 'zoom', label: 'Zoom' },
   { id: 'move', label: 'Move' }
 ];
 
 const cloneState = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
+
+const getObjectSourceKey = (object: AnnotationObject) => {
+  if (object.source === 'model') {
+    return object.modelName ?? 'Model';
+  }
+
+  if (object.source === 'imported') {
+    return 'Imported';
+  }
+
+  return 'Manual';
+};
 
 const buildInitialState = (): WorkspaceState => ({
   projectName: 'Cat behavior dataset',
@@ -149,6 +171,10 @@ const buildInitialState = (): WorkspaceState => ({
   classList: initialClasses,
   activeTool: 'polygon',
   activeLabel: 'Kitten',
+  maskOpacity: 0.58,
+  compareViewMode: 'single',
+  compareLeftSource: 'Imported',
+  compareRightSource: 'YOLO World',
   selectedSegmentationModels: ['SAM 2'],
   selectedDetectionModels: ['YOLO World'],
   activeNav: 'Projects'
@@ -176,6 +202,19 @@ const WorkspacePage = () => {
     () => workspace.classList.filter((item) => !item.visible).map((item) => item.name),
     [workspace.classList]
   );
+  const comparisonOptions = useMemo(() => {
+    const dynamic = new Set<string>();
+
+    objects.forEach((object) => {
+      dynamic.add(getObjectSourceKey(object));
+    });
+
+    ['Imported', 'Manual', ...workspace.selectedSegmentationModels, ...workspace.selectedDetectionModels].forEach((item) =>
+      dynamic.add(item)
+    );
+
+    return Array.from(dynamic);
+  }, [objects, workspace.selectedSegmentationModels, workspace.selectedDetectionModels]);
 
   useEffect(() => {
     return () => {
@@ -381,6 +420,84 @@ const WorkspacePage = () => {
     );
   };
 
+  const deleteObject = (id: number) => {
+    updateWorkspace(
+      (current) => ({
+        ...current,
+        images: current.images.map((image, index) =>
+          index === current.currentImageIndex
+            ? {
+                ...image,
+                annotations: image.annotations.filter((item) => item.id !== id)
+              }
+            : image
+        ),
+        selectedObjectId: current.selectedObjectId === id ? null : current.selectedObjectId
+      }),
+      { status: `Объект ${id} удалён` }
+    );
+  };
+
+  const splitObject = (id: number, splitX: number) => {
+    updateWorkspace(
+      (current) => {
+        const currentImage = current.images[current.currentImageIndex];
+        const target = currentImage.annotations.find((item) => item.id === id);
+
+        if (!target?.area || target.type !== 'box') {
+          return current;
+        }
+
+        const minWidth = 24;
+        const localSplitX = Math.max(
+          target.area.x + minWidth,
+          Math.min(splitX, target.area.x + target.area.width - minWidth)
+        );
+        const leftWidth = Math.round(localSplitX - target.area.x);
+        const rightWidth = Math.round(target.area.width - leftWidth);
+
+        if (leftWidth < minWidth || rightWidth < minWidth) {
+          return current;
+        }
+
+        const leftObject: AnnotationObject = {
+          ...target,
+          id: Date.now(),
+          area: {
+            ...target.area,
+            width: leftWidth
+          }
+        };
+
+        const rightObject: AnnotationObject = {
+          ...target,
+          id: Date.now() + 1,
+          area: {
+            ...target.area,
+            x: Math.round(localSplitX),
+            width: rightWidth
+          }
+        };
+
+        return {
+          ...current,
+          images: current.images.map((image, index) =>
+            index === current.currentImageIndex
+              ? {
+                  ...image,
+                  annotations: image.annotations.flatMap((item) =>
+                    item.id === id ? [leftObject, rightObject] : [item]
+                  )
+                }
+              : image
+          ),
+          selectedObjectId: leftObject.id
+        };
+      },
+      { status: `Объект ${id} разделён` }
+    );
+  };
+
   const handleDeleteSelected = () => {
     if (!workspace.selectedObjectId) {
       setStatusMessage('Сначала выберите объект');
@@ -481,26 +598,30 @@ const WorkspacePage = () => {
 
     const currentObjects = workspace.images[workspace.currentImageIndex]?.annotations ?? [];
     const nextId = currentObjects.reduce((maxId, item) => Math.max(maxId, item.id), 0) + 1;
-    const generated: AnnotationObject[] = [
-      {
-        id: nextId,
-        label: workspace.activeLabel,
-        color: '#7CFC8A',
-        type: 'box',
-        source: 'model',
-        score: 0.91,
-        area: makeArea(120, 120, 180, 240)
-      },
-      {
-        id: nextId + 1,
-        label: workspace.activeLabel,
-        color: '#7CFC8A',
-        type: 'box',
-        source: 'model',
-        score: 0.88,
-        area: makeArea(356, 148, 160, 222)
-      }
-    ];
+    const generated: AnnotationObject[] = activeModels.map((model, index) => ({
+      id: nextId + index,
+      label: workspace.activeLabel,
+      color: '#7CFC8A',
+      type: index % 2 === 0 ? 'box' : 'polygon',
+      source: 'model',
+      modelName: model,
+      score: Math.max(0.72, 0.93 - index * 0.03),
+      area:
+        index % 2 === 0
+          ? makeArea(120 + index * 96, 120 + index * 24, 180, 240)
+          : makeArea(240 + index * 68, 168, 180, 220),
+      points:
+        index % 2 === 0
+          ? undefined
+          : makePoints([
+              [240 + index * 68, 168],
+              [310 + index * 68, 144],
+              [382 + index * 68, 182],
+              [396 + index * 68, 310],
+              [352 + index * 68, 388],
+              [264 + index * 68, 360]
+            ])
+    }));
 
     updateWorkspace(
       (current) => ({
@@ -512,7 +633,7 @@ const WorkspacePage = () => {
         ),
         selectedObjectId: generated[0].id
       }),
-      { status: `Модели ${activeModels.join(', ')} добавили ${generated.length} объекта` }
+      { status: `Модели ${activeModels.join(', ')} добавили ${generated.length} результата` }
     );
   };
 
@@ -547,6 +668,22 @@ const WorkspacePage = () => {
                 })
               }
               activeLabel={workspace.activeLabel}
+              maskOpacity={workspace.maskOpacity}
+              onMaskOpacityChange={(opacity) =>
+                updateWorkspace(
+                  (current) => ({
+                    ...current,
+                    maskOpacity: opacity
+                  }),
+                  {
+                    recordHistory: false,
+                    status: `Прозрачность маски: ${Math.round(opacity * 100)}%`
+                  }
+                )
+              }
+              compareViewMode={workspace.compareViewMode}
+              compareLeftSource={workspace.compareLeftSource}
+              compareRightSource={workspace.compareRightSource}
               imageName={currentImage.name}
               imageSrc={currentImage.src}
               imageIndex={workspace.currentImageIndex}
@@ -578,6 +715,7 @@ const WorkspacePage = () => {
               }
               onCreateObject={createObject}
               onUpdateObject={updateObject}
+              onSplitObject={splitObject}
             />
 
             {selectedObject && (
@@ -831,6 +969,35 @@ const WorkspacePage = () => {
                 ))}
               </div>
 
+              <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                <div className="mb-2 text-sm font-medium text-white">Прозрачность слоя маски</div>
+                <div className="mb-3 text-xs text-slate-400">
+                  Отдельный mask-layer рисуется поверх изображения и регулируется этим ползунком.
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="100"
+                  value={Math.round(workspace.maskOpacity * 100)}
+                  onChange={(event) =>
+                    updateWorkspace(
+                      (current) => ({
+                        ...current,
+                        maskOpacity: Number(event.target.value) / 100
+                      }),
+                      {
+                        recordHistory: false,
+                        status: `Прозрачность маски: ${event.target.value}%`
+                      }
+                    )
+                  }
+                  className="w-full accent-brand-500"
+                />
+                <div className="mt-2 text-xs text-slate-300">
+                  {Math.round(workspace.maskOpacity * 100)}%
+                </div>
+              </div>
+
               <div className="mt-4 flex gap-2">
                 <input
                   value={newClassName}
@@ -917,6 +1084,81 @@ const WorkspacePage = () => {
               >
                 Запустить выбранные модели
               </button>
+
+              <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                <div className="mb-2 text-sm font-medium text-white">Сравнение результатов</div>
+                <div className="mb-3 text-xs text-slate-400">
+                  Переключайтесь между обычным просмотром и split-view, чтобы сравнить импорт, ручную разметку и результаты моделей.
+                </div>
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {(['single', 'split'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() =>
+                        updateWorkspace(
+                          (current) => ({ ...current, compareViewMode: mode }),
+                          {
+                            recordHistory: false,
+                            status: mode === 'split' ? 'Включён split-view' : 'Включён обычный просмотр'
+                          }
+                        )
+                      }
+                      className={`rounded-full px-4 py-2 text-sm ${
+                        workspace.compareViewMode === mode
+                          ? 'bg-brand-500 text-white'
+                          : 'border border-slate-700 bg-slate-900 text-slate-300'
+                      }`}
+                    >
+                      {mode === 'single' ? 'Single view' : 'Split view'}
+                    </button>
+                  ))}
+                </div>
+
+                {workspace.compareViewMode === 'split' && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-xs text-slate-400">
+                      Левая часть
+                      <select
+                        value={workspace.compareLeftSource}
+                        onChange={(event) =>
+                          updateWorkspace(
+                            (current) => ({ ...current, compareLeftSource: event.target.value }),
+                            { recordHistory: false, status: `Слева: ${event.target.value}` }
+                          )
+                        }
+                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+                      >
+                        {comparisonOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="text-xs text-slate-400">
+                      Правая часть
+                      <select
+                        value={workspace.compareRightSource}
+                        onChange={(event) =>
+                          updateWorkspace(
+                            (current) => ({ ...current, compareRightSource: event.target.value }),
+                            { recordHistory: false, status: `Справа: ${event.target.value}` }
+                          )
+                        }
+                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+                      >
+                        {comparisonOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                )}
+              </div>
 
               <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-300">
                 <div className="mb-2 flex items-center gap-2 font-medium text-white">

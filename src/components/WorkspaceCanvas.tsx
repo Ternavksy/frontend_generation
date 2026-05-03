@@ -4,7 +4,7 @@ import { Circle, Group, Image as KonvaImage, Layer, Line, Rect, Stage, Text } fr
 const FALLBACK_CANVAS_WIDTH = 1200;
 const FALLBACK_CANVAS_HEIGHT = 720;
 
-export type ToolMode = 'select' | 'box' | 'polygon' | 'zoom' | 'move';
+export type ToolMode = 'select' | 'box' | 'polygon' | 'zoom' | 'move' | 'brush' | 'eraser' | 'split';
 export type ActiveToolMode = ToolMode | null;
 
 export interface WorkspaceNavItem {
@@ -28,12 +28,16 @@ export interface AnnotationObject {
   id: number;
   label: string;
   color: string;
-  type: 'box' | 'polygon';
+  type: 'box' | 'polygon' | 'brush';
+  operation?: 'paint' | 'erase';
   source: 'manual' | 'imported' | 'model';
+  modelName?: string;
   score?: number;
   area?: Area;
   points?: PolygonPoint[];
 }
+
+export type CompareViewMode = 'single' | 'split';
 
 interface WorkspaceCanvasProps {
   navItems: WorkspaceNavItem[];
@@ -42,6 +46,11 @@ interface WorkspaceCanvasProps {
   activeTool: ActiveToolMode;
   onToolChange: (tool: ActiveToolMode) => void;
   activeLabel: string;
+  maskOpacity: number;
+  onMaskOpacityChange: (opacity: number) => void;
+  compareViewMode: CompareViewMode;
+  compareLeftSource: string;
+  compareRightSource: string;
   imageName: string;
   imageSrc: string;
   imageIndex: number;
@@ -71,6 +80,7 @@ interface WorkspaceCanvasProps {
   onSelectObject: (id: number | null) => void;
   onCreateObject: (object: Omit<AnnotationObject, 'id'>) => void;
   onUpdateObject: (id: number, patch: Partial<AnnotationObject>) => void;
+  onSplitObject: (id: number, splitX: number) => void;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -87,6 +97,33 @@ const getPolygonBounds = (points: PolygonPoint[]): Area => {
   };
 };
 
+const groupMaskObjectsByLabel = (items: AnnotationObject[]) => {
+  const grouped = new Map<string, AnnotationObject[]>();
+
+  items.forEach((item) => {
+    const current = grouped.get(item.label) ?? [];
+    current.push(item);
+    grouped.set(item.label, current);
+  });
+
+  return Array.from(grouped.entries()).map(([label, groupedItems]) => ({
+    label,
+    items: groupedItems
+  }));
+};
+
+const getObjectSourceKey = (object: AnnotationObject) => {
+  if (object.source === 'model') {
+    return object.modelName ?? 'Model';
+  }
+
+  if (object.source === 'imported') {
+    return 'Imported';
+  }
+
+  return 'Manual';
+};
+
 const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   navItems,
   activeNav,
@@ -94,6 +131,11 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   activeTool,
   onToolChange,
   activeLabel,
+  maskOpacity,
+  onMaskOpacityChange,
+  compareViewMode,
+  compareLeftSource,
+  compareRightSource,
   imageName,
   imageSrc,
   imageIndex,
@@ -122,7 +164,8 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   onResetAnnotations,
   onSelectObject,
   onCreateObject,
-  onUpdateObject
+  onUpdateObject,
+  onSplitObject
 }) => {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [imageSize, setImageSize] = useState({
@@ -132,6 +175,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   const [stageWidth, setStageWidth] = useState(FALLBACK_CANVAS_WIDTH);
   const [draftBox, setDraftBox] = useState<Area | null>(null);
   const [polygonDraft, setPolygonDraft] = useState<PolygonPoint[]>([]);
+  const [brushDraft, setBrushDraft] = useState<PolygonPoint[]>([]);
   const [drawingStart, setDrawingStart] = useState<PolygonPoint | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -169,6 +213,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     setZoom(1);
     setOffset({ x: 0, y: 0 });
     setPolygonDraft([]);
+    setBrushDraft([]);
     setDraftBox(null);
     setDrawingStart(null);
   }, [imageSrc]);
@@ -233,6 +278,21 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   const visibleObjects = useMemo(
     () => objects.filter((item) => !hiddenLabels.includes(item.label)),
     [objects, hiddenLabels]
+  );
+  const listedObjects = useMemo(
+    () => visibleObjects.filter((item) => !(item.type === 'brush' && item.operation === 'erase')),
+    [visibleObjects]
+  );
+  const getObjectsForSource = (sourceKey: string) =>
+    visibleObjects.filter((item) => getObjectSourceKey(item) === sourceKey);
+
+  const comparisonLeftObjects = useMemo(
+    () => (compareViewMode === 'split' ? getObjectsForSource(compareLeftSource) : visibleObjects),
+    [compareViewMode, compareLeftSource, visibleObjects]
+  );
+  const comparisonRightObjects = useMemo(
+    () => getObjectsForSource(compareRightSource),
+    [compareRightSource, visibleObjects]
   );
 
   const getPointer = (event: any): PolygonPoint | null => {
@@ -335,6 +395,223 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
     setPolygonDraft((current) => [...current, pointer]);
     onSelectObject(null);
+  };
+
+  const startBrush = (event: any) => {
+    const pointer = getPointer(event);
+
+    if (!pointer) {
+      return;
+    }
+
+    setBrushDraft([pointer]);
+    onSelectObject(null);
+  };
+
+  const updateBrush = (event: any) => {
+    const pointer = getPointer(event);
+
+    if (!pointer || brushDraft.length === 0) {
+      return;
+    }
+
+    setBrushDraft((current) => [...current, pointer]);
+  };
+
+  const finishBrush = (operation: 'paint' | 'erase') => {
+    if (brushDraft.length < 2) {
+      setBrushDraft([]);
+      return;
+    }
+
+    const bounds = getPolygonBounds(brushDraft);
+    onCreateObject({
+      type: 'brush',
+      label: activeLabel,
+      color: '#7CFC8A',
+      operation,
+      source: 'manual',
+      points: brushDraft,
+      area: bounds
+    });
+    setBrushDraft([]);
+  };
+
+  const pointInObject = (object: AnnotationObject, point: PolygonPoint) => {
+    if (!object.area) {
+      return false;
+    }
+
+    return (
+      point.x >= object.area.x &&
+      point.x <= object.area.x + object.area.width &&
+      point.y >= object.area.y &&
+      point.y <= object.area.y + object.area.height
+    );
+  };
+
+  const splitAtPoint = (event: any) => {
+    const pointer = getPointer(event);
+
+    if (!pointer || !selectedObjectId) {
+      return;
+    }
+
+    const selected = visibleObjects.find((object) => object.id === selectedObjectId);
+
+    if (selected?.type === 'box' && selected.area && pointInObject(selected, pointer)) {
+      onSplitObject(selected.id, pointer.x);
+    }
+  };
+
+  const renderMaskAnnotations = (items: AnnotationObject[]) => {
+    const localMaskObjects = items.filter((item) => item.type === 'polygon' || item.type === 'brush');
+    const paintMaskObjects = localMaskObjects.filter(
+      (item) => !(item.type === 'brush' && item.operation === 'erase')
+    );
+    const eraseMaskObjects = localMaskObjects.filter(
+      (item) => item.type === 'brush' && item.operation === 'erase'
+    );
+    const localGroupedMaskObjects = groupMaskObjectsByLabel(paintMaskObjects);
+
+    return (
+      <>
+        {localGroupedMaskObjects.map(({ label, items: groupedItems }, groupIndex) => (
+          <Group key={label}>
+            {groupedItems.map((object, itemIndex) => {
+              const isSelected = selectedObjectId === object.id;
+              const stroke = isSelected ? '#8cfb95' : object.color;
+              const fill = isSelected ? 'rgba(124, 252, 138, 0.28)' : 'rgba(124, 252, 138, 0.18)';
+
+              if (object.type === 'polygon' && object.points) {
+                return (
+                  <Group key={object.id}>
+                    <Line
+                      points={object.points.flatMap((point) => [point.x, point.y])}
+                      closed
+                      stroke={stroke}
+                      strokeWidth={isSelected ? 3 : 2}
+                      fill={fill}
+                      opacity={maskOpacity}
+                      onClick={() => onSelectObject(object.id)}
+                    />
+                    <Text
+                      x={object.points[0]?.x ?? 0}
+                      y={(object.points[0]?.y ?? 0) - 18}
+                      text={`${groupIndex + itemIndex + 1} ${object.label}`}
+                      fill="#152017"
+                      fontSize={14}
+                      padding={4}
+                    />
+                  </Group>
+                );
+              }
+
+              if (object.type === 'brush' && object.points) {
+                return (
+                  <Group key={object.id}>
+                    <Line
+                      points={object.points.flatMap((point) => [point.x, point.y])}
+                      stroke={stroke}
+                      strokeWidth={16}
+                      lineCap="round"
+                      lineJoin="round"
+                      opacity={maskOpacity}
+                      tension={0.25}
+                      globalCompositeOperation="source-over"
+                      onClick={() => onSelectObject(object.id)}
+                    />
+                    <Text
+                      x={object.points[0]?.x ?? 0}
+                      y={(object.points[0]?.y ?? 0) - 18}
+                      text={`${groupIndex + itemIndex + 1} ${object.label}`}
+                      fill="#d8ffe2"
+                      fontSize={14}
+                      padding={4}
+                    />
+                  </Group>
+                );
+              }
+
+              return null;
+            })}
+          </Group>
+        ))}
+
+        {eraseMaskObjects.map((object) => {
+          if (object.type !== 'brush' || !object.points) {
+            return null;
+          }
+
+          return (
+            <Line
+              key={object.id}
+              points={object.points.flatMap((point) => [point.x, point.y])}
+              stroke="#000000"
+              strokeWidth={24}
+              lineCap="round"
+              lineJoin="round"
+              tension={0.25}
+              globalCompositeOperation="destination-out"
+              listening={false}
+            />
+          );
+        })}
+      </>
+    );
+  };
+
+  const renderDetectionAnnotations = (items: AnnotationObject[]) => {
+    const localDetectionObjects = items.filter((item) => item.type === 'box');
+    const localListedObjects = items.filter((item) => !(item.type === 'brush' && item.operation === 'erase'));
+
+    return (
+      <>
+        {localDetectionObjects.map((object, index) => {
+          const isSelected = selectedObjectId === object.id;
+          const stroke = isSelected ? '#8cfb95' : object.color;
+          const fill = isSelected ? 'rgba(124, 252, 138, 0.12)' : 'rgba(124, 252, 138, 0.06)';
+
+          if (!object.area) {
+            return null;
+          }
+
+          return (
+            <Group key={object.id}>
+              <Rect
+                x={object.area.x}
+                y={object.area.y}
+                width={object.area.width}
+                height={object.area.height}
+                stroke={stroke}
+                strokeWidth={isSelected ? 3 : 2}
+                fill={fill}
+                dash={isSelected ? [8, 4] : undefined}
+                draggable={activeTool === 'select'}
+                onClick={() => onSelectObject(object.id)}
+                onDragEnd={(event) => {
+                  onUpdateObject(object.id, {
+                    area: {
+                      ...object.area!,
+                      x: Math.round(event.target.x()),
+                      y: Math.round(event.target.y())
+                    }
+                  });
+                }}
+              />
+              <Text
+                x={object.area.x}
+                y={Math.max(0, object.area.y - 20)}
+                text={`${localListedObjects.filter((item) => item.type !== 'box').length + index + 1} ${object.label}`}
+                fill="#d8ffe2"
+                fontSize={14}
+                padding={4}
+              />
+            </Group>
+          );
+        })}
+      </>
+    );
   };
 
   return (
@@ -482,6 +759,9 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
               { id: 'select' as ToolMode, icon: '✥', label: 'Выбор', hint: 'Выбор и перемещение уже созданных объектов.' },
               { id: 'box' as ToolMode, icon: '▭', label: 'Box', hint: 'Создание прямоугольной области на изображении.' },
               { id: 'polygon' as ToolMode, icon: '⬠', label: 'Polygon', hint: 'Покадровое выделение объекта по точкам.' },
+              { id: 'brush' as ToolMode, icon: '🖌', label: 'Кисть', hint: 'Ручная дорисовка маски выбранного класса.' },
+              { id: 'eraser' as ToolMode, icon: '⌫', label: 'Ластик', hint: 'Частичное стирание маски выбранного класса.' },
+              { id: 'split' as ToolMode, icon: '✂', label: 'Разделение', hint: 'Разделение выбранного bounding box на две части.' },
               { id: 'zoom' as ToolMode, icon: '⌕', label: 'Zoom', hint: 'Приближение и отдаление рабочей области.' },
               { id: 'move' as ToolMode, icon: '✋', label: 'Move', hint: 'Перемещение холста внутри рабочей области.' }
             ].map((tool) => {
@@ -533,6 +813,21 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     return;
                   }
 
+                  if (activeTool === 'brush') {
+                    startBrush(event);
+                    return;
+                  }
+
+                  if (activeTool === 'eraser') {
+                    startBrush(event);
+                    return;
+                  }
+
+                  if (activeTool === 'split') {
+                    splitAtPoint(event);
+                    return;
+                  }
+
                   if (activeTool === 'zoom') {
                     const stage = event.target.getStage();
                     const pointer = stage?.getPointerPosition();
@@ -564,6 +859,16 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     return;
                   }
 
+                  if (activeTool === 'brush') {
+                    updateBrush(event);
+                    return;
+                  }
+
+                  if (activeTool === 'eraser') {
+                    updateBrush(event);
+                    return;
+                  }
+
                   if (activeTool === 'move' && isPanning && panStart) {
                     const stage = event.target.getStage();
                     const pointer = stage?.getPointerPosition();
@@ -576,6 +881,14 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 onMouseUp={() => {
                   if (activeTool === 'box') {
                     finishBox();
+                  }
+
+                  if (activeTool === 'brush') {
+                    finishBrush('paint');
+                  }
+
+                  if (activeTool === 'eraser') {
+                    finishBrush('erase');
                   }
 
                   setIsPanning(false);
@@ -600,74 +913,65 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 <Layer x={offset.x} y={offset.y} scaleX={canvasScale} scaleY={canvasScale}>
                   <Rect x={0} y={0} width={imageSize.width} height={imageSize.height} fill="#0f172a" />
                   {image && <KonvaImage image={image} width={imageSize.width} height={imageSize.height} />}
+                </Layer>
 
-                  {visibleObjects.map((object, index) => {
-                    const isSelected = selectedObjectId === object.id;
-                    const stroke = isSelected ? '#8cfb95' : object.color;
-                    const fill = isSelected ? 'rgba(124, 252, 138, 0.18)' : 'rgba(124, 252, 138, 0.1)';
-
-                    if (object.type === 'polygon' && object.points) {
-                      return (
-                        <Group key={object.id}>
-                          <Line
-                            points={object.points.flatMap((point) => [point.x, point.y])}
-                            closed
-                            stroke={stroke}
-                            strokeWidth={isSelected ? 3 : 2}
-                            fill={fill}
-                            onClick={() => onSelectObject(object.id)}
-                          />
-                          <Text
-                            x={object.points[0]?.x ?? 0}
-                            y={(object.points[0]?.y ?? 0) - 18}
-                            text={`${index + 1} ${object.label}`}
-                            fill="#152017"
-                            fontSize={14}
-                            padding={4}
-                          />
-                        </Group>
-                      );
-                    }
-
-                    if (!object.area) {
-                      return null;
-                    }
-
-                    return (
-                      <Group key={object.id}>
-                        <Rect
-                          x={object.area.x}
-                          y={object.area.y}
-                          width={object.area.width}
-                          height={object.area.height}
-                          stroke={stroke}
-                          strokeWidth={isSelected ? 3 : 2}
-                          fill={fill}
-                          dash={isSelected ? [8, 4] : undefined}
-                          draggable={activeTool === 'select'}
-                          onClick={() => onSelectObject(object.id)}
-                          onDragEnd={(event) => {
-                            onUpdateObject(object.id, {
-                              area: {
-                                ...object.area!,
-                                x: Math.round(event.target.x()),
-                                y: Math.round(event.target.y())
-                              }
-                            });
-                          }}
-                        />
-                        <Text
-                          x={object.area.x}
-                          y={Math.max(0, object.area.y - 20)}
-                          text={`${index + 1} ${object.label}`}
-                          fill="#152017"
-                          fontSize={14}
-                          padding={4}
-                        />
+                <Layer x={offset.x} y={offset.y} scaleX={canvasScale} scaleY={canvasScale}>
+                  {compareViewMode === 'split' ? (
+                    <>
+                      <Group clipX={0} clipY={0} clipWidth={imageSize.width / 2} clipHeight={imageSize.height}>
+                        {renderMaskAnnotations(comparisonLeftObjects)}
                       </Group>
-                    );
-                  })}
+                      <Group
+                        clipX={imageSize.width / 2}
+                        clipY={0}
+                        clipWidth={imageSize.width / 2}
+                        clipHeight={imageSize.height}
+                      >
+                        {renderMaskAnnotations(comparisonRightObjects)}
+                      </Group>
+                    </>
+                  ) : (
+                    renderMaskAnnotations(visibleObjects)
+                  )}
+                </Layer>
 
+                <Layer x={offset.x} y={offset.y} scaleX={canvasScale} scaleY={canvasScale}>
+                  {compareViewMode === 'split' ? (
+                    <>
+                      <Group clipX={0} clipY={0} clipWidth={imageSize.width / 2} clipHeight={imageSize.height}>
+                        {renderDetectionAnnotations(comparisonLeftObjects)}
+                      </Group>
+                      <Group
+                        clipX={imageSize.width / 2}
+                        clipY={0}
+                        clipWidth={imageSize.width / 2}
+                        clipHeight={imageSize.height}
+                      >
+                        {renderDetectionAnnotations(comparisonRightObjects)}
+                      </Group>
+                      <Line
+                        points={[imageSize.width / 2, 0, imageSize.width / 2, imageSize.height]}
+                        stroke="#f8fafc"
+                        strokeWidth={2}
+                        dash={[10, 8]}
+                        opacity={0.8}
+                      />
+                      <Text x={24} y={20} text={compareLeftSource} fill="#f8fafc" fontSize={18} padding={6} />
+                      <Text
+                        x={imageSize.width / 2 + 24}
+                        y={20}
+                        text={compareRightSource}
+                        fill="#f8fafc"
+                        fontSize={18}
+                        padding={6}
+                      />
+                    </>
+                  ) : (
+                    renderDetectionAnnotations(visibleObjects)
+                  )}
+                </Layer>
+
+                <Layer x={offset.x} y={offset.y} scaleX={canvasScale} scaleY={canvasScale}>
                   {draftBox && (
                     <Rect
                       x={draftBox.x}
@@ -689,12 +993,27 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                       ))}
                     </>
                   )}
+
+                  {brushDraft.length > 0 && (
+                    <Line
+                      points={brushDraft.flatMap((point) => [point.x, point.y])}
+                      stroke={activeTool === 'eraser' ? '#fca5a5' : '#7CFC8A'}
+                      strokeWidth={activeTool === 'eraser' ? 24 : 16}
+                      lineCap="round"
+                      lineJoin="round"
+                      opacity={activeTool === 'eraser' ? 0.45 : maskOpacity}
+                      tension={0.25}
+                    />
+                  )}
                 </Layer>
               </Stage>
 
               <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-lg bg-[rgba(22,22,22,0.76)] px-4 py-2 text-xs text-white">
                 {activeTool === 'box' && 'Зажмите и протяните, чтобы создать bounding box.'}
                 {activeTool === 'polygon' && 'Кликайте по контуру объекта. Замкните полигон кликом рядом с первой точкой.'}
+                {activeTool === 'brush' && 'Зажмите мышь и рисуйте по изображению, чтобы дорисовать маску выбранного класса.'}
+                {activeTool === 'eraser' && 'Зажмите мышь и стирайте фрагменты mask-layer выбранного класса.'}
+                {activeTool === 'split' && 'Кликните внутри выбранного bounding box, чтобы разделить его на две части.'}
                 {activeTool === 'select' && 'Выберите объект на изображении и перетащите его при необходимости.'}
                 {activeTool === 'zoom' && 'Кликайте по холсту или используйте колесо мыши для zoom.'}
                 {activeTool === 'move' && 'Зажмите мышь и перемещайте холст.'}
@@ -706,22 +1025,22 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
             <div className="border-b border-slate-800 bg-slate-950/80 px-4 py-3">
               <div className="flex items-center justify-between text-sm font-semibold text-slate-100">
                 <span>Objects</span>
-                <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-300">{visibleObjects.length}</span>
+                <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-300">{listedObjects.length}</span>
               </div>
             </div>
 
             <div className="max-h-[360px] overflow-y-auto p-3">
-              {visibleObjects.map((object, index) => {
+              {listedObjects.map((object, index) => {
                 const isSelected = selectedObjectId === object.id;
 
                 return (
                   <button
                     key={object.id}
                     type="button"
-                    onClick={() => onSelectObject(object.id)}
-                    className={`mb-2 w-full rounded-md border px-3 py-2 text-left ${
-                      isSelected ? 'border-brand-500/40 bg-brand-500/10' : 'border-slate-800 bg-slate-950'
-                    }`}
+                        onClick={() => onSelectObject(object.id)}
+                        className={`mb-2 w-full rounded-md border px-3 py-2 text-left ${
+                          isSelected ? 'border-brand-500/40 bg-brand-500/10' : 'border-slate-800 bg-slate-950'
+                        }`}
                   >
                     <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.14em] text-slate-500">
                       <span>{index + 1}</span>
@@ -730,8 +1049,9 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     <div className="mt-1 text-sm font-medium text-slate-100">{object.label}</div>
                     <div className="mt-1 text-xs text-slate-400">
                       {object.source === 'imported' && 'Импорт из аннотаций'}
-                      {object.source === 'model' && `Модель${object.score ? ` · ${Math.round(object.score * 100)}%` : ''}`}
-                      {object.source === 'manual' && 'Ручная разметка'}
+                      {object.source === 'model' && `${object.modelName ?? 'Модель'}${object.score ? ` · ${Math.round(object.score * 100)}%` : ''}`}
+                      {object.source === 'manual' && object.type === 'brush' && object.operation === 'paint' && 'Ручная маска'}
+                      {object.source === 'manual' && object.type !== 'brush' && 'Ручная разметка'}
                     </div>
                   </button>
                 );
@@ -748,6 +1068,20 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
               </div>
               <div className="mt-2 text-xs text-slate-400">
                 Zoom: <span className="font-semibold text-slate-100">{zoom.toFixed(2)}x</span>
+              </div>
+              <div className="mt-2 text-xs text-slate-400">
+                Прозрачность маски: <span className="font-semibold text-slate-100">{Math.round(maskOpacity * 100)}%</span>
+              </div>
+              <div className="mt-4">
+                <div className="mb-2 text-xs text-slate-500">Opacity</div>
+                <input
+                  type="range"
+                  min="10"
+                  max="100"
+                  value={Math.round(maskOpacity * 100)}
+                  onChange={(event) => onMaskOpacityChange(Number(event.target.value) / 100)}
+                  className="w-full accent-brand-500"
+                />
               </div>
               <div className="mt-4">
                 <div className="mb-2 text-xs text-slate-500">Status</div>
