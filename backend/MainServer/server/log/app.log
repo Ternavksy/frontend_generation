@@ -324,3 +324,22 @@ passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passl
 2026-05-04 09:42:42,430 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
 2026-05-04 09:42:49,609 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
 2026-05-04 09:42:49,678 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-04 09:51:12,861 - passlib.handlers.bcrypt - DEBUG - trapped unexpected response from 'os_crypt' backend: verify('test', b'$2$04$5BJqKfqMQvV7nS.yUguNcuRfMMOXK0xPWavM7pOzjEi5ze5T1k8/S'):
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 303, in safe_verify
+    return verify(secret, hash)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 837, in _calc_checksum
+    raise uh.exc.InternalBackendError(
+passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passlib recommends running `pip install bcrypt` for general bcrypt support.(config=<hash <class 'str'> value omitted>, secret=<hash <class 'bytes'> value omitted>)
+2026-05-04 09:51:12,864 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
+2026-05-04 09:51:23,618 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-04 09:51:23,663 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-04 09:52:19,298 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-04 09:52:19,325 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-04 09:52:48,450 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-04 09:52:48,492 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-04 09:53:58,241 - ModelRunRouter - INFO - ClassTypeService: проект 20c8f7b0-8947-4483-a74d-d8a3a00df9a8, обработано 1 классов, создано 0 новых

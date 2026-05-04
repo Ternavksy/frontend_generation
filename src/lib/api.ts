@@ -222,6 +222,11 @@ export const api = {
 
   getAnnotations: (projectId: string, imageId: string) =>
     request<AnnotationResponse[]>(`/annotations/${projectId}/images/${imageId}`),
+  runModels: (projectId: string, imageId: string, modelIds: number[], className: string) =>
+    request<AnnotationResponse[]>(`/models/${projectId}/images/${imageId}/run`, {
+      method: 'POST',
+      body: JSON.stringify({ model_ids: modelIds, class_name: className })
+    }),
   createAnnotation: (projectId: string, imageId: string, payload: AnnotationPayload) =>
     request<AnnotationResponse>(`/annotations/${projectId}/images/${imageId}`, {
       method: 'POST',

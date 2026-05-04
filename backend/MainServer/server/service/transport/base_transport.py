@@ -5,7 +5,7 @@ class ModelConfigBase(BaseModel):
     id: int
     name: str
     type: str
-    # endpoint_url: str
-    # is_active: bool
+    endpoint_url: str | None = None
+    is_active: bool | None = None
 
     model_config = ConfigDict(from_attributes=True)

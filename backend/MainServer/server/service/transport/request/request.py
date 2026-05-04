@@ -90,3 +90,9 @@ class AnnotationResponse(BaseModel):
     is_selected: bool
 
     model_config = {"from_attributes": True}
+
+
+class ModelRunRequest(BaseModel):
+    model_ids: Optional[List[int]] = None
+    model_names: Optional[List[str]] = None
+    class_name: str = Field(default="Object", description="Класс/промпт для модели")

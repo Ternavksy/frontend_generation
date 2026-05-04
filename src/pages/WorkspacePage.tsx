@@ -11,7 +11,7 @@ import WorkspaceCanvas, {
   type ToolMode,
   type WorkspaceNavItem
 } from '../components/WorkspaceCanvas';
-import { api, type AnnotationPayload, type AnnotationResponse, type ClassType, type Project } from '../lib/api';
+import { api, type AnnotationPayload, type AnnotationResponse, type ClassType, type ModelConfig, type Project } from '../lib/api';
 import defaultCatsImage from '../../cats.jpg';
 
 interface ClassItem {
@@ -127,9 +127,6 @@ const navItems: WorkspaceNavItem[] = [
   { key: 'Requests', label: 'Requests' },
   { key: 'Models', label: 'Models' }
 ];
-
-const segmentationModels = ['SAM 2', 'SEEM', 'X-Decoder'];
-const detectionModels = ['YOLO World', 'Grounding DINO', 'RT-DETR'];
 
 const toolOptions: Array<{ id: ToolMode; label: string }> = [
   { id: 'select', label: 'Выбор' },
@@ -250,6 +247,8 @@ const WorkspacePage = () => {
   const [workspace, setWorkspace] = useState<WorkspaceState>(initialState);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [availableModels, setAvailableModels] = useState<ModelConfig[]>([]);
+  const [isRunningModels, setIsRunningModels] = useState(false);
   const [isLoadingRemoteImages, setIsLoadingRemoteImages] = useState(false);
   const [newClassName, setNewClassName] = useState('');
   const [statusMessage, setStatusMessage] = useState('Готово к разметке');
@@ -278,12 +277,29 @@ const WorkspacePage = () => {
       dynamic.add(getObjectSourceKey(object));
     });
 
-    ['Imported', 'Manual', ...workspace.selectedSegmentationModels, ...workspace.selectedDetectionModels].forEach((item) =>
-      dynamic.add(item)
-    );
+    const selectedModelNames = availableModels
+      .filter((model) => [...workspace.selectedSegmentationModels, ...workspace.selectedDetectionModels].includes(String(model.id)))
+      .map((model) => model.name);
+
+    ['Imported', 'Manual', ...selectedModelNames].forEach((item) => dynamic.add(item));
 
     return Array.from(dynamic);
-  }, [objects, workspace.selectedSegmentationModels, workspace.selectedDetectionModels]);
+  }, [availableModels, objects, workspace.selectedSegmentationModels, workspace.selectedDetectionModels]);
+  const segmentationModels = useMemo(
+    () => availableModels.filter((model) => model.type.includes('segmentation')),
+    [availableModels]
+  );
+  const detectionModels = useMemo(
+    () => availableModels.filter((model) => model.type.includes('detection')),
+    [availableModels]
+  );
+  const selectedModelIds = useMemo(
+    () =>
+      availableModels
+        .filter((model) => [...workspace.selectedSegmentationModels, ...workspace.selectedDetectionModels].includes(String(model.id)))
+        .map((model) => model.id),
+    [availableModels, workspace.selectedDetectionModels, workspace.selectedSegmentationModels]
+  );
 
   useEffect(() => {
     return () => {
@@ -314,7 +330,10 @@ const WorkspacePage = () => {
     api
       .getProjectImages(selectedProjectId)
       .then(async (items) => {
-        const projectClasses = await api.getProjectClasses(selectedProjectId).catch(() => [] as ClassType[]);
+        const [projectClasses, projectModels] = await Promise.all([
+          api.getProjectClasses(selectedProjectId).catch(() => [] as ClassType[]),
+          api.getProjectModels(selectedProjectId).catch(() => [] as ModelConfig[])
+        ]);
         const remoteImages = await Promise.all(
           items.map(async (item, index) => {
             const src = await api.getImageObjectUrl(selectedProjectId, item.id);
@@ -373,13 +392,22 @@ const WorkspacePage = () => {
             remoteImages[0]?.annotations[0]?.label ??
             projectClasses[0]?.name_eng ??
             projectClasses[0]?.name_ru ??
-            (remoteImages.length ? 'Object' : 'Kitten')
+            (remoteImages.length ? 'Object' : 'Kitten'),
+          selectedSegmentationModels: projectModels
+            .filter((model) => model.type.includes('segmentation'))
+            .slice(0, 1)
+            .map((model) => String(model.id)),
+          selectedDetectionModels: projectModels
+            .filter((model) => model.type.includes('detection'))
+            .slice(0, 1)
+            .map((model) => String(model.id))
         };
 
         historyRef.current = [cloneState(nextState)];
         historyIndexRef.current = 0;
         setHistory(historyRef.current);
         setHistoryIndex(0);
+        setAvailableModels(projectModels);
         setWorkspace(nextState);
         setStatusMessage(remoteImages.length ? `Загружено изображений проекта: ${remoteImages.length}` : 'В проекте пока нет изображений');
       })
@@ -867,66 +895,45 @@ const WorkspacePage = () => {
   };
 
   const handleRunModels = () => {
-    const activeModels = [...workspace.selectedSegmentationModels, ...workspace.selectedDetectionModels];
+    const activeModelNames = availableModels
+      .filter((model) => selectedModelIds.includes(model.id))
+      .map((model) => model.name);
 
-    if (!activeModels.length) {
+    if (!selectedModelIds.length) {
       setStatusMessage('Выберите хотя бы одну модель');
       return;
     }
 
-    const generated: AnnotationObject[] = activeModels.map((model, index) => ({
-      id: createLocalAnnotationId(),
-      label: workspace.activeLabel,
-      color: '#7CFC8A',
-      type: index % 2 === 0 ? 'box' : 'polygon',
-      source: 'model',
-      modelName: model,
-      score: Math.max(0.72, 0.93 - index * 0.03),
-      area:
-        index % 2 === 0
-          ? makeArea(120 + index * 96, 120 + index * 24, 180, 240)
-          : makeArea(240 + index * 68, 168, 180, 220),
-      points:
-        index % 2 === 0
-          ? undefined
-          : makePoints([
-              [240 + index * 68, 168],
-              [310 + index * 68, 144],
-              [382 + index * 68, 182],
-              [396 + index * 68, 310],
-              [352 + index * 68, 388],
-              [264 + index * 68, 360]
-            ])
-    }));
-
-    updateWorkspace(
-      (current) => ({
-        ...current,
-        images: current.images.map((image, index) =>
-          index === current.currentImageIndex
-            ? { ...image, annotations: [...image.annotations, ...generated] }
-            : image
-        ),
-        selectedObjectId: generated[0].id
-      }),
-      { status: `Модели ${activeModels.join(', ')} добавили ${generated.length} результата` }
-    );
-
-    if (canPersistAnnotations && currentImage && isUuid(currentImage.id)) {
-      const remoteImageId = currentImage.id;
-      Promise.all(
-        generated.map((object) =>
-          ensureRemoteClass(selectedProjectId, object.label).then(() =>
-            api.createAnnotation(selectedProjectId, remoteImageId, serializeAnnotationObject(object))
-          )
-        )
-      )
-        .then((created) => {
-          created.forEach((remote, index) => replaceAnnotationId(remoteImageId, generated[index].id, remote));
-          setStatusMessage(`Результаты моделей сохранены в БД: ${created.length}`);
-        })
-        .catch((err) => setStatusMessage(err instanceof Error ? `Не удалось сохранить результаты моделей: ${err.message}` : 'Не удалось сохранить результаты моделей'));
+    if (!selectedProjectId || !currentImage || !isUuid(currentImage.id)) {
+      setStatusMessage('Выберите изображение проекта из backend');
+      return;
     }
+
+    setIsRunningModels(true);
+    setStatusMessage(`Запускаем модели: ${activeModelNames.join(', ')}`);
+
+    api
+      .runModels(selectedProjectId, currentImage.id, selectedModelIds, workspace.activeLabel)
+      .then((annotations) => {
+        const generated = annotations.map(annotationFromApi);
+
+        updateWorkspace(
+          (current) => ({
+            ...current,
+            images: current.images.map((image, index) =>
+              index === current.currentImageIndex
+                ? { ...image, annotations: mergeAnnotationObjects(generated, image.annotations) }
+                : image
+            ),
+            selectedObjectId: generated[0]?.id ?? current.selectedObjectId
+          }),
+          { status: `Модели вернули авторазметку: ${generated.length}` }
+        );
+      })
+      .catch((err) =>
+        setStatusMessage(err instanceof Error ? `Не удалось запустить модели: ${err.message}` : 'Не удалось запустить модели')
+      )
+      .finally(() => setIsRunningModels(false));
   };
 
   return (
@@ -1344,21 +1351,23 @@ const WorkspacePage = () => {
                   <div className="mb-2 text-sm font-medium text-slate-200">Сегментация</div>
                   <div className="flex flex-wrap gap-2">
                     {segmentationModels.map((model) => {
-                      const isActive = workspace.selectedSegmentationModels.includes(model);
+                      const modelKey = String(model.id);
+                      const isActive = workspace.selectedSegmentationModels.includes(modelKey);
 
                       return (
                         <button
-                          key={model}
+                          key={model.id}
                           type="button"
-                          onClick={() => toggleModel(model, 'segmentation')}
+                          onClick={() => toggleModel(modelKey, 'segmentation')}
                           className={`rounded-full px-4 py-2 text-sm ${
                             isActive ? 'bg-emerald-500 text-slate-950' : 'border border-slate-700 bg-slate-950 text-slate-300'
                           }`}
                         >
-                          {model}
+                          {model.name}
                         </button>
                       );
                     })}
+                    {!segmentationModels.length && <div className="text-sm text-slate-500">Нет доступных моделей сегментации</div>}
                   </div>
                 </div>
 
@@ -1366,21 +1375,23 @@ const WorkspacePage = () => {
                   <div className="mb-2 text-sm font-medium text-slate-200">Детекция</div>
                   <div className="flex flex-wrap gap-2">
                     {detectionModels.map((model) => {
-                      const isActive = workspace.selectedDetectionModels.includes(model);
+                      const modelKey = String(model.id);
+                      const isActive = workspace.selectedDetectionModels.includes(modelKey);
 
                       return (
                         <button
-                          key={model}
+                          key={model.id}
                           type="button"
-                          onClick={() => toggleModel(model, 'detection')}
+                          onClick={() => toggleModel(modelKey, 'detection')}
                           className={`rounded-full px-4 py-2 text-sm ${
                             isActive ? 'bg-brand-500 text-white' : 'border border-slate-700 bg-slate-950 text-slate-300'
                           }`}
                         >
-                          {model}
+                          {model.name}
                         </button>
                       );
                     })}
+                    {!detectionModels.length && <div className="text-sm text-slate-500">Нет доступных моделей детекции</div>}
                   </div>
                 </div>
               </div>
@@ -1388,9 +1399,10 @@ const WorkspacePage = () => {
               <button
                 type="button"
                 onClick={handleRunModels}
-                className="mt-4 w-full rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white"
+                disabled={isRunningModels}
+                className="mt-4 w-full rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60"
               >
-                Запустить выбранные модели
+                {isRunningModels ? 'Модели обрабатывают изображение...' : 'Запустить выбранные модели'}
               </button>
 
               <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
