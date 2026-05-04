@@ -203,6 +203,16 @@ const annotationFromApi = (annotation: AnnotationResponse): AnnotationObject => 
 const annotationsFromRecord = (annotations: Record<string, AnnotationResponse> | undefined) =>
   Object.values(annotations ?? {}).map(annotationFromApi);
 
+const mergeAnnotationObjects = (primary: AnnotationObject[], fallback: AnnotationObject[]) => {
+  const byId = new Map<AnnotationObject['id'], AnnotationObject>();
+
+  [...fallback, ...primary].forEach((annotation) => {
+    byId.set(annotation.id, annotation);
+  });
+
+  return Array.from(byId.values());
+};
+
 const classItemFromApi = (classType: ClassType): ClassItem => ({
   name: classType.name_eng || classType.name_ru,
   source: 'imported',
@@ -308,13 +318,18 @@ const WorkspacePage = () => {
         const remoteImages = await Promise.all(
           items.map(async (item, index) => {
             const src = await api.getImageObjectUrl(selectedProjectId, item.id);
+            const embeddedAnnotations = annotationsFromRecord(item.annotations);
+            const fetchedAnnotations = await api
+              .getAnnotations(selectedProjectId, item.id)
+              .then((annotations) => annotations.map(annotationFromApi))
+              .catch(() => [] as AnnotationObject[]);
             uploadedUrlsRef.current.push(src);
 
             return {
               id: item.id,
               name: item.file_path?.split('/').pop() ?? `${index + 1}.${item.format ?? 'jpg'}`,
               src,
-              annotations: annotationsFromRecord(item.annotations)
+              annotations: mergeAnnotationObjects(fetchedAnnotations, embeddedAnnotations)
             } satisfies WorkspaceImage;
           })
         );
