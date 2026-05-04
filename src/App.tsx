@@ -1,5 +1,5 @@
 import { Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import {
   DashboardPage,
@@ -14,18 +14,44 @@ import {
 } from './pages';
 import { TopNav } from './components';
 import SplashScreen from './components/SplashScreen';
+import { api, type AuthPayload } from './lib/api';
 
 const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isAuthorized, setIsAuthorized] = useState(true); // Changed to true for demo
+  const [isAuthorized, setIsAuthorized] = useState(Boolean(api.tokenStorage.getAccess()));
+  const [isCheckingSession, setIsCheckingSession] = useState(Boolean(api.tokenStorage.getAccess()));
   const [isSplashVisible, setIsSplashVisible] = useState(false);
 
-  const handleLogin = () => {
+  useEffect(() => {
+    if (!api.tokenStorage.getAccess()) {
+      return;
+    }
+
+    api
+      .getMe()
+      .then(() => setIsAuthorized(true))
+      .catch(() => {
+        api.tokenStorage.clear();
+        setIsAuthorized(false);
+      })
+      .finally(() => setIsCheckingSession(false));
+  }, []);
+
+  const handleLogin = async (payload: AuthPayload) => {
+    await api.login(payload);
     setIsAuthorized(true);
     setIsSplashVisible(true);
     navigate('/dashboard');
   };
+
+  if (isCheckingSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-300">
+        Проверяем сессию...
+      </div>
+    );
+  }
 
   if (isSplashVisible) {
     return <SplashScreen onLoadComplete={() => setIsSplashVisible(false)} />;

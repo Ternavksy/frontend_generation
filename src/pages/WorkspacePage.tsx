@@ -11,6 +11,7 @@ import WorkspaceCanvas, {
   type ToolMode,
   type WorkspaceNavItem
 } from '../components/WorkspaceCanvas';
+import { api, type AnnotationPayload, type AnnotationResponse, type ClassType, type Project } from '../lib/api';
 import defaultCatsImage from '../../cats.jpg';
 
 interface ClassItem {
@@ -21,7 +22,7 @@ interface ClassItem {
 }
 
 interface WorkspaceImage {
-  id: number;
+  id: number | string;
   name: string;
   src: string;
   annotations: AnnotationObject[];
@@ -34,7 +35,7 @@ interface WorkspaceState {
   taskName: string;
   images: WorkspaceImage[];
   currentImageIndex: number;
-  selectedObjectId: number | null;
+  selectedObjectId: AnnotationObject['id'] | null;
   classList: ClassItem[];
   activeTool: ActiveToolMode;
   activeLabel: string;
@@ -155,6 +156,60 @@ const getObjectSourceKey = (object: AnnotationObject) => {
   return 'Manual';
 };
 
+const isUuid = (value: AnnotationObject['id']): value is string =>
+  typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const createLocalAnnotationId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const getAnnotationApiType = (object: Pick<AnnotationObject, 'type'>): AnnotationPayload['type'] =>
+  object.type === 'box' ? 'detection' : 'segmentation';
+
+const serializeAnnotationObject = (object: AnnotationObject): AnnotationPayload => {
+  const { id: _id, ...objectData } = object;
+
+  return {
+    type: getAnnotationApiType(object),
+    class_name: object.label,
+    data: {
+      version: 1,
+      object: objectData
+    }
+  };
+};
+
+const normalizeBackendType = (type: AnnotationResponse['type']) =>
+  type === 'detect' ? 'detection' : type === 'segment' ? 'segmentation' : type;
+
+const annotationFromApi = (annotation: AnnotationResponse): AnnotationObject => {
+  const data = annotation.data && typeof annotation.data === 'object' ? (annotation.data as Record<string, unknown>) : {};
+  const objectData =
+    data.object && typeof data.object === 'object' ? (data.object as Partial<AnnotationObject>) : (data as Partial<AnnotationObject>);
+  const backendType = normalizeBackendType(annotation.type);
+
+  return {
+    id: annotation.id,
+    label: annotation.class_name,
+    color: objectData.color ?? '#7CFC8A',
+    type: objectData.type ?? (backendType === 'detection' ? 'box' : 'polygon'),
+    source: objectData.source ?? 'manual',
+    operation: objectData.operation,
+    modelName: objectData.modelName,
+    score: objectData.score,
+    area: objectData.area,
+    points: objectData.points
+  };
+};
+
+const annotationsFromRecord = (annotations: Record<string, AnnotationResponse> | undefined) =>
+  Object.values(annotations ?? {}).map(annotationFromApi);
+
+const classItemFromApi = (classType: ClassType): ClassItem => ({
+  name: classType.name_eng || classType.name_ru,
+  source: 'imported',
+  color: '#7CFC8A',
+  visible: true
+});
+
 const buildInitialState = (): WorkspaceState => ({
   projectName: 'Cat behavior dataset',
   taskName: 'cats_sequence_12',
@@ -183,6 +238,9 @@ const buildInitialState = (): WorkspaceState => ({
 const WorkspacePage = () => {
   const initialState = useMemo(buildInitialState, []);
   const [workspace, setWorkspace] = useState<WorkspaceState>(initialState);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [isLoadingRemoteImages, setIsLoadingRemoteImages] = useState(false);
   const [newClassName, setNewClassName] = useState('');
   const [statusMessage, setStatusMessage] = useState('Готово к разметке');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -197,6 +255,7 @@ const WorkspacePage = () => {
   const currentImage = workspace.images[workspace.currentImageIndex];
   const objects = currentImage?.annotations ?? [];
   const selectedObject = objects.find((item) => item.id === workspace.selectedObjectId) ?? null;
+  const canPersistAnnotations = Boolean(selectedProjectId && currentImage && isUuid(currentImage.id));
 
   const hiddenLabels = useMemo(
     () => workspace.classList.filter((item) => !item.visible).map((item) => item.name),
@@ -221,6 +280,105 @@ const WorkspacePage = () => {
       uploadedUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
+
+  useEffect(() => {
+    api
+      .listProjects()
+      .then((items) => {
+        setProjects(items);
+        setSelectedProjectId(items[0]?.id ?? '');
+      })
+      .catch((err) => setStatusMessage(err instanceof Error ? err.message : 'Не удалось загрузить проекты'));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProjectId) {
+      return;
+    }
+
+    const project = projects.find((item) => item.id === selectedProjectId);
+    let isCancelled = false;
+    setIsLoadingRemoteImages(true);
+    setStatusMessage('Загружаем изображения проекта...');
+
+    api
+      .getProjectImages(selectedProjectId)
+      .then(async (items) => {
+        const projectClasses = await api.getProjectClasses(selectedProjectId).catch(() => [] as ClassType[]);
+        const remoteImages = await Promise.all(
+          items.map(async (item, index) => {
+            const src = await api.getImageObjectUrl(selectedProjectId, item.id);
+            uploadedUrlsRef.current.push(src);
+
+            return {
+              id: item.id,
+              name: item.file_path?.split('/').pop() ?? `${index + 1}.${item.format ?? 'jpg'}`,
+              src,
+              annotations: annotationsFromRecord(item.annotations)
+            } satisfies WorkspaceImage;
+          })
+        );
+
+        if (isCancelled) {
+          remoteImages.forEach((image) => URL.revokeObjectURL(image.src));
+          return;
+        }
+
+        const nextState: WorkspaceState = {
+          ...buildInitialState(),
+          projectName: project?.name ?? 'Проект',
+          taskName: remoteImages[0]?.name.replace(/\.[^.]+$/, '') ?? 'Нет изображений',
+          images: remoteImages.length
+            ? remoteImages
+            : [
+                {
+                  id: 'empty',
+                  name: 'Нет изображений',
+                  src: defaultCatsImage,
+                  annotations: []
+                }
+              ],
+          currentImageIndex: 0,
+          selectedObjectId: null,
+          classList: remoteImages.length
+            ? [
+                ...projectClasses.map(classItemFromApi),
+                ...Array.from(new Set(remoteImages.flatMap((image) => image.annotations.map((item) => item.label))))
+                  .filter((name) => !projectClasses.some((classType) => classType.name_eng === name || classType.name_ru === name))
+                  .map<ClassItem>((name) => ({
+                    name,
+                    source: 'imported',
+                    color: '#7CFC8A',
+                    visible: true
+                  })),
+                ...(projectClasses.length ? [] : [{ name: 'Object', source: 'manual' as const, color: '#52b5ff', visible: true }])
+              ]
+            : initialClasses,
+          activeLabel:
+            remoteImages[0]?.annotations[0]?.label ??
+            projectClasses[0]?.name_eng ??
+            projectClasses[0]?.name_ru ??
+            (remoteImages.length ? 'Object' : 'Kitten')
+        };
+
+        historyRef.current = [cloneState(nextState)];
+        historyIndexRef.current = 0;
+        setHistory(historyRef.current);
+        setHistoryIndex(0);
+        setWorkspace(nextState);
+        setStatusMessage(remoteImages.length ? `Загружено изображений проекта: ${remoteImages.length}` : 'В проекте пока нет изображений');
+      })
+      .catch((err) => setStatusMessage(err instanceof Error ? err.message : 'Не удалось загрузить изображения проекта'))
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoadingRemoteImages(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [projects, selectedProjectId]);
 
   const pushHistory = (nextState: WorkspaceState) => {
     const snapshot = cloneState(nextState);
@@ -379,10 +537,68 @@ const WorkspacePage = () => {
     event.target.value = '';
   };
 
+  const replaceAnnotationId = (imageId: WorkspaceImage['id'], localId: AnnotationObject['id'], remote: AnnotationResponse) => {
+    const remoteObject = annotationFromApi(remote);
+
+    updateWorkspace(
+      (current) => ({
+        ...current,
+        images: current.images.map((image) =>
+          image.id === imageId
+            ? {
+                ...image,
+                annotations: image.annotations.map((item) => (item.id === localId ? remoteObject : item))
+              }
+            : image
+        ),
+        selectedObjectId: current.selectedObjectId === localId ? remoteObject.id : current.selectedObjectId
+      }),
+      { recordHistory: false }
+    );
+  };
+
+  const ensureRemoteClass = async (projectId: string, label: string) => {
+    const exists = workspace.classList.some((item) => item.name.toLowerCase() === label.toLowerCase() && item.source !== 'manual');
+
+    if (exists) {
+      return;
+    }
+
+    try {
+      await api.createProjectClass(projectId, label);
+    } catch (err) {
+      if (!(err instanceof Error) || !err.message.includes('уже существует')) {
+        throw err;
+      }
+    }
+  };
+
+  const removeLocalAnnotation = (imageId: WorkspaceImage['id'], objectId: AnnotationObject['id']) => {
+    updateWorkspace(
+      (current) => ({
+        ...current,
+        images: current.images.map((image) =>
+          image.id === imageId
+            ? {
+                ...image,
+                annotations: image.annotations.filter((item) => item.id !== objectId)
+              }
+            : image
+        ),
+        selectedObjectId: current.selectedObjectId === objectId ? null : current.selectedObjectId
+      }),
+      { recordHistory: false }
+    );
+  };
+
   const createObject = (object: Omit<AnnotationObject, 'id'>) => {
+    const imageForRequest = currentImage;
+    const localId = createLocalAnnotationId();
+    const shouldPersist = Boolean(selectedProjectId && imageForRequest && isUuid(imageForRequest.id));
+    const nextObject: AnnotationObject = { ...object, id: localId };
+
     updateWorkspace(
       (current) => {
-        const nextObject: AnnotationObject = { ...object, id: Date.now() };
         const images = current.images.map((image, index) =>
           index === current.currentImageIndex
             ? { ...image, annotations: [...image.annotations, nextObject] }
@@ -401,9 +617,26 @@ const WorkspacePage = () => {
       },
       { status: `Создан объект ${object.label}` }
     );
+
+    if (shouldPersist) {
+      ensureRemoteClass(selectedProjectId, object.label)
+        .then(() => api.createAnnotation(selectedProjectId, String(imageForRequest.id), serializeAnnotationObject(nextObject)))
+        .then((remote) => {
+          replaceAnnotationId(imageForRequest.id, localId, remote);
+          setStatusMessage(`Объект ${object.label} сохранён в БД`);
+        })
+        .catch((err) => {
+          removeLocalAnnotation(imageForRequest.id, localId);
+          setStatusMessage(err instanceof Error ? `Не удалось сохранить объект: ${err.message}` : 'Не удалось сохранить объект');
+        });
+    }
   };
 
-  const updateObject = (id: number, patch: Partial<AnnotationObject>) => {
+  const updateObject = (id: AnnotationObject['id'], patch: Partial<AnnotationObject>) => {
+    const imageForRequest = currentImage;
+    const target = imageForRequest?.annotations.find((item) => item.id === id);
+    const nextObject = target ? { ...target, ...patch } : null;
+
     updateWorkspace(
       (current) => ({
         ...current,
@@ -418,9 +651,18 @@ const WorkspacePage = () => {
       }),
       { status: `Объект ${id} обновлён` }
     );
+
+    if (selectedProjectId && imageForRequest && isUuid(imageForRequest.id) && isUuid(id) && nextObject) {
+      api
+        .updateAnnotation(selectedProjectId, imageForRequest.id, id, serializeAnnotationObject(nextObject))
+        .then(() => setStatusMessage(`Объект ${id} обновлён в БД`))
+        .catch((err) => setStatusMessage(err instanceof Error ? `Не удалось обновить объект: ${err.message}` : 'Не удалось обновить объект'));
+    }
   };
 
-  const deleteObject = (id: number) => {
+  const deleteObject = (id: AnnotationObject['id']) => {
+    const imageForRequest = currentImage;
+
     updateWorkspace(
       (current) => ({
         ...current,
@@ -436,9 +678,19 @@ const WorkspacePage = () => {
       }),
       { status: `Объект ${id} удалён` }
     );
+
+    if (selectedProjectId && imageForRequest && isUuid(imageForRequest.id) && isUuid(id)) {
+      api
+        .deleteAnnotation(selectedProjectId, imageForRequest.id, id)
+        .then(() => setStatusMessage(`Объект ${id} удалён из БД`))
+        .catch((err) => setStatusMessage(err instanceof Error ? `Не удалось удалить объект: ${err.message}` : 'Не удалось удалить объект'));
+    }
   };
 
-  const splitObject = (id: number, splitX: number) => {
+  const splitObject = (id: AnnotationObject['id'], splitX: number) => {
+    const imageForRequest = currentImage;
+    let splitObjects: AnnotationObject[] = [];
+
     updateWorkspace(
       (current) => {
         const currentImage = current.images[current.currentImageIndex];
@@ -462,7 +714,7 @@ const WorkspacePage = () => {
 
         const leftObject: AnnotationObject = {
           ...target,
-          id: Date.now(),
+          id: createLocalAnnotationId(),
           area: {
             ...target.area,
             width: leftWidth
@@ -471,13 +723,14 @@ const WorkspacePage = () => {
 
         const rightObject: AnnotationObject = {
           ...target,
-          id: Date.now() + 1,
+          id: createLocalAnnotationId(),
           area: {
             ...target.area,
             x: Math.round(localSplitX),
             width: rightWidth
           }
         };
+        splitObjects = [leftObject, rightObject];
 
         return {
           ...current,
@@ -496,6 +749,20 @@ const WorkspacePage = () => {
       },
       { status: `Объект ${id} разделён` }
     );
+
+    if (selectedProjectId && imageForRequest && isUuid(imageForRequest.id) && isUuid(id) && splitObjects.length === 2) {
+      const remoteImageId = imageForRequest.id;
+      api
+        .deleteAnnotation(selectedProjectId, remoteImageId, id)
+        .then(() =>
+          Promise.all(splitObjects.map((object) => api.createAnnotation(selectedProjectId, remoteImageId, serializeAnnotationObject(object))))
+        )
+        .then((created) => {
+          created.forEach((remote, index) => replaceAnnotationId(remoteImageId, splitObjects[index].id, remote));
+          setStatusMessage(`Объект ${id} разделён и сохранён в БД`);
+        })
+        .catch((err) => setStatusMessage(err instanceof Error ? `Не удалось сохранить разделение: ${err.message}` : 'Не удалось сохранить разделение'));
+    }
   };
 
   const handleDeleteSelected = () => {
@@ -504,24 +771,13 @@ const WorkspacePage = () => {
       return;
     }
 
-    updateWorkspace(
-      (current) => ({
-        ...current,
-        images: current.images.map((image, index) =>
-          index === current.currentImageIndex
-            ? {
-                ...image,
-                annotations: image.annotations.filter((item) => item.id !== current.selectedObjectId)
-              }
-            : image
-        ),
-        selectedObjectId: null
-      }),
-      { status: 'Выбранный объект удалён' }
-    );
+    deleteObject(workspace.selectedObjectId);
   };
 
   const handleResetCurrentAnnotations = () => {
+    const imageForRequest = currentImage;
+    const annotationIds = imageForRequest?.annotations.map((item) => item.id).filter(isUuid) ?? [];
+
     updateWorkspace(
       (current) => ({
         ...current,
@@ -533,6 +789,13 @@ const WorkspacePage = () => {
       { status: 'Аннотации текущего изображения очищены' }
     );
     setIsMenuOpen(false);
+
+    if (selectedProjectId && imageForRequest && isUuid(imageForRequest.id) && annotationIds.length) {
+      const remoteImageId = imageForRequest.id;
+      Promise.all(annotationIds.map((id) => api.deleteAnnotation(selectedProjectId, remoteImageId, id)))
+        .then(() => setStatusMessage('Аннотации текущего изображения удалены из БД'))
+        .catch((err) => setStatusMessage(err instanceof Error ? `Не удалось очистить БД: ${err.message}` : 'Не удалось очистить БД'));
+    }
   };
 
   const toggleClassVisibility = (name: string) => {
@@ -596,10 +859,8 @@ const WorkspacePage = () => {
       return;
     }
 
-    const currentObjects = workspace.images[workspace.currentImageIndex]?.annotations ?? [];
-    const nextId = currentObjects.reduce((maxId, item) => Math.max(maxId, item.id), 0) + 1;
     const generated: AnnotationObject[] = activeModels.map((model, index) => ({
-      id: nextId + index,
+      id: createLocalAnnotationId(),
       label: workspace.activeLabel,
       color: '#7CFC8A',
       type: index % 2 === 0 ? 'box' : 'polygon',
@@ -635,6 +896,22 @@ const WorkspacePage = () => {
       }),
       { status: `Модели ${activeModels.join(', ')} добавили ${generated.length} результата` }
     );
+
+    if (canPersistAnnotations && currentImage && isUuid(currentImage.id)) {
+      const remoteImageId = currentImage.id;
+      Promise.all(
+        generated.map((object) =>
+          ensureRemoteClass(selectedProjectId, object.label).then(() =>
+            api.createAnnotation(selectedProjectId, remoteImageId, serializeAnnotationObject(object))
+          )
+        )
+      )
+        .then((created) => {
+          created.forEach((remote, index) => replaceAnnotationId(remoteImageId, generated[index].id, remote));
+          setStatusMessage(`Результаты моделей сохранены в БД: ${created.length}`);
+        })
+        .catch((err) => setStatusMessage(err instanceof Error ? `Не удалось сохранить результаты моделей: ${err.message}` : 'Не удалось сохранить результаты моделей'));
+    }
   };
 
   return (
@@ -811,15 +1088,18 @@ const WorkspacePage = () => {
               <div className="grid gap-3">
                 <label className="text-sm text-slate-300">
                   Проект
-                  <input
-                    value={workspace.projectName}
-                    onChange={(event) =>
-                      updateWorkspace((current) => ({ ...current, projectName: event.target.value }), {
-                        recordHistory: false
-                      })
-                    }
+                  <select
+                    value={selectedProjectId}
+                    onChange={(event) => setSelectedProjectId(event.target.value)}
                     className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-                  />
+                  >
+                    <option value="">Проект не выбран</option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="text-sm text-slate-300">
                   Задача
@@ -840,13 +1120,26 @@ const WorkspacePage = () => {
                   <div>
                     <div className="text-sm font-medium text-white">Текущее изображение</div>
                     <div className="mt-1 text-sm text-slate-400">
-                      Загрузите одно или сразу несколько изображений, затем переключайтесь между ними в toolbar.
+                      {isLoadingRemoteImages
+                        ? 'Получаем изображения из backend...'
+                        : 'Изображения берутся из выбранного проекта. Переключайтесь между ними в toolbar.'}
                     </div>
                   </div>
                   <div className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-200">
                     {currentImage.name}
                   </div>
                 </div>
+                <select
+                  value={workspace.currentImageIndex}
+                  onChange={(event) => setCurrentImageIndex(Number(event.target.value))}
+                  className="mt-4 w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-500"
+                >
+                  {workspace.images.map((image, index) => (
+                    <option key={image.id} value={index}>
+                      {index + 1}. {image.name}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}

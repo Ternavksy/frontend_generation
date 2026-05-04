@@ -1,35 +1,47 @@
-import { Link } from 'react-router-dom';
 import { useState, FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
+import { api, type AuthPayload } from '../lib/api';
 
 interface AuthPageProps {
-  onLogin: () => void;
+  onLogin: (payload: AuthPayload) => Promise<void>;
 }
 
 const AuthPage = ({ onLogin }: AuthPageProps) => {
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const buildPayload = (): AuthPayload => ({
+    login: login.trim(),
+    email: login.includes('@') ? login.trim() : `${login.trim()}@seglabel.local`,
+    password
+  });
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
 
-    if (!email.trim() || !password.trim()) {
+    if (!login.trim() || !password.trim()) {
       setError('Пожалуйста, заполните все поля.');
       return;
     }
 
-    const mockEmail = 'user@example.com';
-    const mockPassword = 'password123';
+    setIsSubmitting(true);
 
-    if (email !== mockEmail || password !== mockPassword) {
-      setError('Неверный email или пароль. Используйте user@example.com / password123');
-      return;
+    try {
+      const payload = buildPayload();
+      if (mode === 'register') {
+        await api.register(payload);
+      }
+      await onLogin(payload);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось выполнить вход.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onLogin();
   };
 
   return (
@@ -48,7 +60,7 @@ const AuthPage = ({ onLogin }: AuthPageProps) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              Вход в SegLabel AI
+              {mode === 'login' ? 'Вход в SegLabel AI' : 'Регистрация в SegLabel AI'}
             </motion.div>
             <motion.p 
               className="text-slate-400"
@@ -67,12 +79,12 @@ const AuthPage = ({ onLogin }: AuthPageProps) => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
             >
-              Email
+              Логин или email
               <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
+                type="text"
+                value={login}
+                onChange={(event) => setLogin(event.target.value)}
+                placeholder="annotator"
                 className="mt-2 w-full rounded-3xl border border-slate-800 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition focus:border-brand-500"
               />
             </motion.label>
@@ -106,6 +118,7 @@ const AuthPage = ({ onLogin }: AuthPageProps) => {
 
             <motion.button
               type="submit"
+              disabled={isSubmitting}
               className="w-full rounded-3xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-600"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -113,7 +126,7 @@ const AuthPage = ({ onLogin }: AuthPageProps) => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              Войти
+              {isSubmitting ? 'Подключаемся...' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
             </motion.button>
           </form>
 
@@ -123,7 +136,16 @@ const AuthPage = ({ onLogin }: AuthPageProps) => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
           >
-            <Link to="#" className="text-brand-400 hover:text-brand-200 text-sm">Регистрация</Link>
+            <button
+              type="button"
+              onClick={() => {
+                setMode((current) => (current === 'login' ? 'register' : 'login'));
+                setError('');
+              }}
+              className="text-brand-400 hover:text-brand-200 text-sm"
+            >
+              {mode === 'login' ? 'Создать аккаунт' : 'Уже есть аккаунт'}
+            </button>
           </motion.div>
         </motion.div>
       </div>

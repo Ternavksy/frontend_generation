@@ -25,7 +25,7 @@ export interface PolygonPoint {
 }
 
 export interface AnnotationObject {
-  id: number;
+  id: number | string;
   label: string;
   color: string;
   type: 'box' | 'polygon' | 'brush';
@@ -60,7 +60,7 @@ interface WorkspaceCanvasProps {
   statusMessage: string;
   isMenuOpen: boolean;
   hasSavedDraft: boolean;
-  selectedObjectId: number | null;
+  selectedObjectId: AnnotationObject['id'] | null;
   objects: AnnotationObject[];
   hiddenLabels: string[];
   onToggleMenu: () => void;
@@ -77,10 +77,10 @@ interface WorkspaceCanvasProps {
   onLoadSaved: () => void;
   onExportProject: () => void;
   onResetAnnotations: () => void;
-  onSelectObject: (id: number | null) => void;
+  onSelectObject: (id: AnnotationObject['id'] | null) => void;
   onCreateObject: (object: Omit<AnnotationObject, 'id'>) => void;
-  onUpdateObject: (id: number, patch: Partial<AnnotationObject>) => void;
-  onSplitObject: (id: number, splitX: number) => void;
+  onUpdateObject: (id: AnnotationObject['id'], patch: Partial<AnnotationObject>) => void;
+  onSplitObject: (id: AnnotationObject['id'], splitX: number) => void;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
