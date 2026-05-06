@@ -1,0 +1,18 @@
+# Core (SAM-2 требует torch >= 2.3.1)
+torch>=2.3.1
+torchvision>=0.18.0
+
+# GroundingDINO Critical (Новые версии ломают архитектуру BERT)
+transformers==4.19.2
+timm==0.6.13
+
+# Utilities
+addict==2.4.0
+yapf==0.32.0
+numpy>=1.24.0,<2.0.0
+opencv-python==4.8.1.78
+supervision>=0.22.0
+pycocotools>=2.0.6
+
+# SAM-2 Build System (Строгое ограничение версии)
+setuptools>=62.3.0,<75.9

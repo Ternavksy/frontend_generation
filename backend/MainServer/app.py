@@ -14,6 +14,7 @@ from server.api.image.router import router as router_image
 from server.api.annotation.router import router as router_annotation
 from server.api.project.router import router as router_project
 from server.api.model.router import router as router_model
+from server.api.analyze.router import router as router_analyze
 
 
 def create_application() -> FastAPI:
@@ -67,6 +68,7 @@ def register_router(app: FastAPI):
     app.include_router(router_annotation)
     app.include_router(router_project)
     app.include_router(router_model)
+    app.include_router(router_analyze)
 
 app = create_application()
 

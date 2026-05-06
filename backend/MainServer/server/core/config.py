@@ -107,6 +107,13 @@ class UserProjectSettings(BaseSettings):
     MIN_IMG_LOAD: int = 10
     MAX_IMG_LOAD: int = 1000
 
+
+class AnalyzeSettings(BaseSettings):
+    MAX_QUEUE_SIZE: int = 100
+    MAX_RETRIES: int = 3
+    CALLBACK_BASE_URL: str = "http://main-server:8085/api/analyze/analysis"
+    DISPATCH_TIMEOUT_SECONDS: float = 60.0
+
 class Settings(BaseSettings):
     """Глобальные настройки приложения"""
     # Server
@@ -131,6 +138,8 @@ class Settings(BaseSettings):
 
     # restriction on groups User
     USER_GROUP: UserProjectSettings = Field(default_factory=UserProjectSettings)
+
+    ANALYZE: AnalyzeSettings = Field(default_factory=AnalyzeSettings)
     
     # CORS
     CORS_ORIGINS: list[str] = Field(

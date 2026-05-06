@@ -46,6 +46,27 @@ services:
     networks:
       - ai-net
 
+  sam2:
+    profiles:
+      - models
+    build:
+      context: ./SAM2
+      dockerfile: Dockerfile
+    container_name: detection-api
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=miniouser
+      - MINIO_SECRET_KEY=admin123
+      - DEVICE=${SAM2_DEVICE:-cpu}
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - ai-net
+
   # MainServer
   main-server:
     build:

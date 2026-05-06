@@ -32,6 +32,13 @@ class ImageType(str, Enum):
     delete = "delete"
     active = "active"
 
+class TaskStatus(str, Enum):
+    queued = "queued"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+    cancelled = "cancelled"
+
 # Ассоциативная таблица Many-to-Many
 project_user_table = Table(
     'project_user',
@@ -120,6 +127,7 @@ class Image(Base):
     user = relationship("User", back_populates="images")
     annotations = relationship("Annotation", back_populates="image", cascade="all, delete-orphan")
     masks = relationship("Mask", back_populates="image", cascade="all, delete-orphan")
+    analysis_tasks = relationship("AnalysisTask", back_populates="image", cascade="all, delete-orphan")
 
 class ModelConfig(Base):
     __tablename__ = 'models'
@@ -129,6 +137,7 @@ class ModelConfig(Base):
     type = Column(SQLEnum(ModelType), nullable=False)
     endpoint_url = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    analysis_tasks = relationship("AnalysisTask", back_populates="model_config")
 
 class Project(Base):
     __tablename__ = 'projects'
@@ -183,3 +192,27 @@ class Mask(Base):
     format = Column(String(10), nullable=True)
 
     image = relationship("Image", back_populates="masks")
+
+class AnalysisTask(Base):
+    __tablename__ = 'analysis_tasks'
+
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    image_id = Column(PG_UUID(as_uuid=True), ForeignKey('images.id'), nullable=False, index=True)
+    model_config_id = Column(Integer, ForeignKey('models.id'), nullable=False)
+    status = Column(
+        SQLEnum(TaskStatus, name="task_status", create_type=True),
+        nullable=False,
+        default=TaskStatus.queued,
+        index=True
+    )
+    callback_token = Column(String(512), nullable=False, unique=True, index=True)
+    class_type_ids = Column(JSON, nullable=False, default=list)
+    result_data = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    error_message = Column(String(500), nullable=True)
+    ws_session_id = Column(String(255), nullable=True, index=True)
+
+    image = relationship("Image", back_populates="analysis_tasks")
+    model_config = relationship("ModelConfig", back_populates="analysis_tasks")

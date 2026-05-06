@@ -28,12 +28,11 @@
   },
 
   "MODEL_CONFIG_DEFAULT": [
-    {"name": "Yolo-World", "type": "detection", "endpoint_url": "http://localhost:8002/api/v1/detect/yoloworld", "is_active": true},
-    {"name": "Yolo-World", "type": "sahi_detection", "endpoint_url": "http://localhost:8002/api/v1/detect/yoloworld-sahi", "is_active": true},
-    {"name": "Grounding Dino", "type": "sahi_detection", "endpoint_url": "http://localhost:8001/api/v1/detect/grounding-dino", "is_active": true},
-    {"name": "Grounding Dino", "type": "detection", "endpoint_url": "http://localhost:8001/api/v1/detect/grounding-dino-sahi", "is_active": true},
-    {"name": "Sam2", "type": "segmentation", "endpoint_url": "http://localhost:8001/api/v1/segment/grounded-sam2", "is_active": true},
-    {"name": "Sam2", "type": "sahi_segmentation", "endpoint_url": "http://localhost:8001/api/v1/segment/grounded-sam2-sahi", "is_active": true}
+    {"name": "Yolo-World", "type": "detection", "endpoint_url": "mock://yoloworld", "is_active": true},
+    {"name": "Yolo-World", "type": "sahi_detection", "endpoint_url": "mock://yoloworld-sahi", "is_active": true},
+    {"name": "Grounding Dino", "type": "sahi_detection", "endpoint_url": "mock://grounding-dino", "is_active": true},
+    {"name": "Grounding Dino", "type": "detection", "endpoint_url": "mock://grounding-dino-sahi", "is_active": true},
+    {"name": "Sam2", "type": "segmentation", "endpoint_url": "mock://grounded-sam2", "is_active": true},
+    {"name": "Sam2", "type": "sahi_segmentation", "endpoint_url": "mock://grounded-sam2-sahi", "is_active": true}
   ]
 }
-

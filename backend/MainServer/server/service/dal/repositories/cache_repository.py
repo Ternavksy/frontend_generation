@@ -60,3 +60,22 @@ class CacheObjectClassesRepository:
             f"{row.name}_{row.type}": row.endpoint_url 
             for row in cls._base_classes_cache
         }
+
+    @classmethod
+    async def get_model_configs_by_name(cls, db: AsyncSession) -> Dict[str, list[ModelConfigBase]]:
+        await cls._ensure_cache_loaded(db=db)
+        assert cls._base_classes_cache is not None, "Cache failed to load"
+        grouped: Dict[str, list[ModelConfigBase]] = {}
+        for row in cls._base_classes_cache:
+            if row.is_active:
+                grouped.setdefault(row.name, []).append(row)
+        return grouped
+
+    @classmethod
+    def get_endpoint_by_config_id(cls, config_id: int) -> str | None:
+        if cls._base_classes_cache is None:
+            return None
+        for row in cls._base_classes_cache:
+            if row.id == config_id and row.is_active:
+                return row.endpoint_url
+        return None

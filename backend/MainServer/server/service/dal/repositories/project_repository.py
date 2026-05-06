@@ -99,6 +99,14 @@ class ClassTypeRepository(BaseRepository[ClassTypeProject]):
         await db.flush()
         return new_entries
 
+    @staticmethod
+    async def get_names_eng_by_ids(db: AsyncSession, class_type_ids: List[UUID]) -> List[str]:
+        if not class_type_ids:
+            return []
+        stmt = select(ClassTypeProject.name_eng).where(ClassTypeProject.id.in_(class_type_ids))
+        result = await db.execute(stmt)
+        return [name for name in result.scalars().all() if name]
+
 class AnnotationRepository(BaseRepository[Annotation]):
     model = Annotation
 

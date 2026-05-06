@@ -14,7 +14,7 @@ from server.core.minio_client import minio_service
 from server.service.application.annotation_service import AnnotationService
 from server.service.application.class_type_service import ClassTypeService
 from server.service.dal.repositories import AnnotationRepository, ImageRepository, ProjectRepository
-from server.service.db.shemas.models import Annotation, ModelConfig, User
+from server.service.db.shemas.models import Annotation, AnnotationType, ModelConfig, User
 from server.service.transport.request.request import ModelRunRequest
 
 
@@ -255,6 +255,11 @@ class ModelRunService:
         class_name = data.class_name.strip() or "Object"
         await ClassTypeService.ensure_and_map_class_types(db, str(project_id), [class_name], logger)
 
+        if all(model.endpoint_url.startswith("mock://") for model in models):
+            created = await cls._create_mock_annotations(db, image_id, models, class_name)
+            logger.info("Created %s mock model annotations for image %s", len(created), image_id)
+            return created
+
         image_bytes = await asyncio.to_thread(
             minio_service.download_image,
             filename=image.file_path,
@@ -284,6 +289,47 @@ class ModelRunService:
 
         if not created:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Модель не вернула распознаваемую разметку")
+
+        await AnnotationRepository.create_many(db, created)
+        return created
+
+    @staticmethod
+    async def _create_mock_annotations(
+        db: AsyncSession,
+        image_id: UUID,
+        models: list[ModelConfig],
+        class_name: str,
+    ) -> list[Annotation]:
+        created: list[Annotation] = []
+        palette = ["#7CFC8A", "#60A5FA", "#F59E0B", "#F472B6"]
+
+        for index, model in enumerate(models):
+            offset = index * 26
+            annotation = Annotation(
+                image_id=image_id,
+                type=AnnotationType.detection,
+                class_name=class_name,
+                data={
+                    "version": 1,
+                    "object": {
+                        "label": class_name,
+                        "color": palette[index % len(palette)],
+                        "type": "box",
+                        "source": "model",
+                        "modelName": model.name,
+                        "score": 0.99,
+                        "mock": True,
+                        "area": {
+                            "x": 32 + offset,
+                            "y": 32 + offset,
+                            "width": 180,
+                            "height": 140,
+                        },
+                    },
+                },
+            )
+            db.add(annotation)
+            created.append(annotation)
 
         await AnnotationRepository.create_many(db, created)
         return created

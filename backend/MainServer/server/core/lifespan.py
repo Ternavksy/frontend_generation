@@ -6,7 +6,7 @@ from sqlalchemy import select, text
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from server.core.dependencies import get_database_context
+from server.core.dependencies import close_task_runtime, get_database_context, get_task_manager
 from server.service.db.database import engine
 from server.service.db.shemas.models import Base
 from server.service.dal.repositories.cache_repository import ModelConfigRepository
@@ -18,24 +18,29 @@ logger = logging.getLogger(__name__)
 async def _init_database_classes(db: AsyncSession):
     """Инициализация справочников классов в БД при старте"""
     try:
-        # Проверяем, есть ли уже записи
         result = await db.execute(select(ModelConfigRepository.model))
-        if result.scalars().first():
-            return  # Уже инициализировано
-        
-        # Создаём экземпляры из конфига
-        instances = [
-            ModelConfigRepository.model(
-                name=item.name,
-                type=item.type,
-                endpoint_url=item.endpoint_url,
-                is_active=item.is_active
-            )
-            for item in settings.MODEL_CONFIG_DEFAULT
-        ]
-        
-        if instances:
-            db.add_all(instances)
+        existing = {
+            (item.name, item.type): item
+            for item in result.scalars().all()
+        }
+
+        for item in settings.MODEL_CONFIG_DEFAULT:
+            key = (item.name, item.type)
+            model = existing.get(key)
+            if model:
+                model.endpoint_url = item.endpoint_url
+                model.is_active = item.is_active
+            else:
+                db.add(
+                    ModelConfigRepository.model(
+                        name=item.name,
+                        type=item.type,
+                        endpoint_url=item.endpoint_url,
+                        is_active=item.is_active
+                    )
+                )
+
+        if settings.MODEL_CONFIG_DEFAULT:
             await db.commit()
             
     except Exception as e:
@@ -72,6 +77,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Инициализация моделей и ссылок на них
     async with get_database_context() as db:
         await _init_database_classes(db)
+        await get_task_manager().initialize_from_repository(db)
     
     # Регистрация событий БД для инвалидации кэша
     add_event_listen()    
@@ -79,4 +85,5 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
     
     # Корректное закрытие пула соединений
+    await close_task_runtime()
     await engine.dispose()

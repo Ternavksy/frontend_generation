@@ -343,3 +343,65 @@ passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passl
 2026-05-04 09:52:48,450 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
 2026-05-04 09:52:48,492 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
 2026-05-04 09:53:58,241 - ModelRunRouter - INFO - ClassTypeService: проект 20c8f7b0-8947-4483-a74d-d8a3a00df9a8, обработано 1 классов, создано 0 новых
+2026-05-06 07:41:32,574 - passlib.handlers.bcrypt - DEBUG - trapped unexpected response from 'os_crypt' backend: verify('test', b'$2$04$5BJqKfqMQvV7nS.yUguNcuRfMMOXK0xPWavM7pOzjEi5ze5T1k8/S'):
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 303, in safe_verify
+    return verify(secret, hash)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 837, in _calc_checksum
+    raise uh.exc.InternalBackendError(
+passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passlib recommends running `pip install bcrypt` for general bcrypt support.(config=<hash <class 'str'> value omitted>, secret=<hash <class 'bytes'> value omitted>)
+2026-05-06 07:41:32,620 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
+2026-05-06 07:45:30,419 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:45:30,477 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:45:49,042 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:45:49,064 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:47:57,718 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:47:57,723 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:47:57,871 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:47:57,913 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:48:25,439 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:48:25,487 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:48:28,467 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:48:28,484 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 07:48:30,511 - ModelRunRouter - INFO - ClassTypeService: проект 20c8f7b0-8947-4483-a74d-d8a3a00df9a8, обработано 1 классов, создано 0 новых
+2026-05-06 07:48:32,243 - ModelRunRouter - INFO - ClassTypeService: проект 20c8f7b0-8947-4483-a74d-d8a3a00df9a8, обработано 1 классов, создано 0 новых
+2026-05-06 08:05:30,609 - passlib.handlers.bcrypt - DEBUG - trapped unexpected response from 'os_crypt' backend: verify('test', b'$2$04$5BJqKfqMQvV7nS.yUguNcuRfMMOXK0xPWavM7pOzjEi5ze5T1k8/S'):
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 303, in safe_verify
+    return verify(secret, hash)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 837, in _calc_checksum
+    raise uh.exc.InternalBackendError(
+passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passlib recommends running `pip install bcrypt` for general bcrypt support.(config=<hash <class 'str'> value omitted>, secret=<hash <class 'bytes'> value omitted>)
+2026-05-06 08:05:30,620 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
+2026-05-06 08:05:32,491 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 08:05:32,545 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 08:05:53,986 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 08:05:54,012 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 08:06:02,642 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket connected: user=95b3796d-9f58-4532-9801-702f53b6531f, session=ed35f041-99a0-49d2-9738-affd4b2dc05b, image=None
+2026-05-06 08:06:03,036 - AnalyzeRouter - INFO - WebSocket disconnected: session=ed35f041-99a0-49d2-9738-affd4b2dc05b
+2026-05-06 08:06:03,036 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket disconnected: session=ed35f041-99a0-49d2-9738-affd4b2dc05b
+2026-05-06 11:32:50,707 - passlib.handlers.bcrypt - DEBUG - trapped unexpected response from 'os_crypt' backend: verify('test', b'$2$04$5BJqKfqMQvV7nS.yUguNcuRfMMOXK0xPWavM7pOzjEi5ze5T1k8/S'):
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 303, in safe_verify
+    return verify(secret, hash)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 837, in _calc_checksum
+    raise uh.exc.InternalBackendError(
+passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passlib recommends running `pip install bcrypt` for general bcrypt support.(config=<hash <class 'str'> value omitted>, secret=<hash <class 'bytes'> value omitted>)
+2026-05-06 11:32:50,712 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
+2026-05-06 11:33:08,983 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 11:33:09,017 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-06 11:34:52,155 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket connected: user=95b3796d-9f58-4532-9801-702f53b6531f, session=c572502e-277a-4e23-9118-ac36683bfd8f, image=None
+2026-05-06 11:34:52,552 - AnalyzeRouter - INFO - WebSocket disconnected: session=c572502e-277a-4e23-9118-ac36683bfd8f
+2026-05-06 11:34:52,552 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket disconnected: session=c572502e-277a-4e23-9118-ac36683bfd8f

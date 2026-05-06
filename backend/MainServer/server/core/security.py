@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from uuid import UUID
 from fastapi import HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
@@ -74,3 +75,25 @@ def get_current_user_payload(token: str = None) -> dict:
             detail="Token required",
         )
     return decode_token(token)
+
+
+def _callback_secret() -> str:
+    return settings.ADMIN.AUTH_SECRET or settings.ADMIN.SESSION_SECRET or "dsa-callback-secret"
+
+
+def generate_callback_token(task_id: str | UUID) -> str:
+    return jwt.encode(
+        {"sub": str(task_id), "type": "analysis_callback"},
+        _callback_secret(),
+        algorithm=settings.ADMIN.ALGORITHM,
+    )
+
+
+def verify_callback_token(token: str) -> str | None:
+    try:
+        payload = jwt.decode(token, _callback_secret(), algorithms=[settings.ADMIN.ALGORITHM])
+    except JWTError:
+        return None
+    if payload.get("type") != "analysis_callback":
+        return None
+    return payload.get("sub")

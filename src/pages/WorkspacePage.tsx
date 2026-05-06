@@ -11,7 +11,15 @@ import WorkspaceCanvas, {
   type ToolMode,
   type WorkspaceNavItem
 } from '../components/WorkspaceCanvas';
-import { api, type AnnotationPayload, type AnnotationResponse, type ClassType, type ModelConfig, type Project } from '../lib/api';
+import {
+  api,
+  type AnalysisSocketMessage,
+  type AnnotationPayload,
+  type AnnotationResponse,
+  type ClassType,
+  type ModelConfig,
+  type Project
+} from '../lib/api';
 import defaultCatsImage from '../../cats.jpg';
 
 interface ClassItem {
@@ -248,6 +256,7 @@ const WorkspacePage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [availableModels, setAvailableModels] = useState<ModelConfig[]>([]);
+  const [availableClasses, setAvailableClasses] = useState<ClassType[]>([]);
   const [isRunningModels, setIsRunningModels] = useState(false);
   const [isLoadingRemoteImages, setIsLoadingRemoteImages] = useState(false);
   const [newClassName, setNewClassName] = useState('');
@@ -408,6 +417,7 @@ const WorkspacePage = () => {
         setHistory(historyRef.current);
         setHistoryIndex(0);
         setAvailableModels(projectModels);
+        setAvailableClasses(projectClasses);
         setWorkspace(nextState);
         setStatusMessage(remoteImages.length ? `Загружено изображений проекта: ${remoteImages.length}` : 'В проекте пока нет изображений');
       })
@@ -898,6 +908,13 @@ const WorkspacePage = () => {
     const activeModelNames = availableModels
       .filter((model) => selectedModelIds.includes(model.id))
       .map((model) => model.name);
+    const selectedModelId = selectedModelIds[0];
+    const classTypeIds = availableClasses
+      .filter((classType) => {
+        const className = classType.name_eng || classType.name_ru;
+        return className === workspace.activeLabel || !hiddenLabels.includes(className);
+      })
+      .map((classType) => classType.id);
 
     if (!selectedModelIds.length) {
       setStatusMessage('Выберите хотя бы одну модель');
@@ -909,11 +926,29 @@ const WorkspacePage = () => {
       return;
     }
 
+    const currentImageId = currentImage.id;
+
     setIsRunningModels(true);
-    setStatusMessage(`Запускаем модели: ${activeModelNames.join(', ')}`);
+    setStatusMessage(`Подключаем WebSocket анализа: ${activeModelNames.join(', ')}`);
+
+    const handleAnalysisMessage = (message: AnalysisSocketMessage) => {
+      if (message.type === 'task_created') {
+        setStatusMessage(`Задача анализа создана: ${(message as { task_id: string }).task_id}`);
+      }
+      if (message.type === 'task_update') {
+        const event = (message as { event?: string }).event;
+        setStatusMessage(event === 'completed' ? 'Модель вернула результат, обновляем аннотации...' : `Статус анализа: ${event}`);
+      }
+    };
 
     api
-      .runModels(selectedProjectId, currentImage.id, selectedModelIds, workspace.activeLabel)
+      .startAnalysisViaWebSocket({
+        imageId: currentImageId,
+        modelConfigId: selectedModelId,
+        classTypeIds,
+        onMessage: handleAnalysisMessage
+      })
+      .then(() => api.getAnnotations(selectedProjectId, currentImageId))
       .then((annotations) => {
         const generated = annotations.map(annotationFromApi);
 
@@ -930,9 +965,32 @@ const WorkspacePage = () => {
           { status: `Модели вернули авторазметку: ${generated.length}` }
         );
       })
-      .catch((err) =>
-        setStatusMessage(err instanceof Error ? `Не удалось запустить модели: ${err.message}` : 'Не удалось запустить модели')
-      )
+      .catch((err) => {
+        setStatusMessage(err instanceof Error ? `WebSocket не прошёл, пробуем REST: ${err.message}` : 'WebSocket не прошёл, пробуем REST');
+        return api
+          .runModels(selectedProjectId, currentImageId, selectedModelIds, workspace.activeLabel)
+          .then((annotations) => {
+            const generated = annotations.map(annotationFromApi);
+
+            updateWorkspace(
+              (current) => ({
+                ...current,
+                images: current.images.map((image, index) =>
+                  index === current.currentImageIndex
+                    ? { ...image, annotations: mergeAnnotationObjects(generated, image.annotations) }
+                    : image
+                ),
+                selectedObjectId: generated[0]?.id ?? current.selectedObjectId
+              }),
+              { status: `REST fallback вернул авторазметку: ${generated.length}` }
+            );
+          })
+          .catch((fallbackErr) =>
+            setStatusMessage(
+              fallbackErr instanceof Error ? `Не удалось запустить модели: ${fallbackErr.message}` : 'Не удалось запустить модели'
+            )
+          );
+      })
       .finally(() => setIsRunningModels(false));
   };
 

@@ -1,5 +1,16 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 
+const getWebSocketBaseUrl = () => {
+  const configured = import.meta.env.VITE_WS_URL as string | undefined;
+  if (configured) {
+    return configured.replace(/\/$/, '');
+  }
+
+  const apiUrl = new URL(API_BASE_URL, window.location.origin);
+  apiUrl.protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+  return apiUrl.origin;
+};
+
 export interface AuthPayload {
   email: string;
   login: string;
@@ -65,6 +76,31 @@ export interface AnnotationResponse {
   data: unknown;
   is_selected?: boolean;
 }
+
+export interface AnalysisTaskCreatedMessage {
+  type: 'task_created';
+  task_id: string;
+  status: 'queued';
+  message?: string;
+}
+
+export interface AnalysisTaskUpdateMessage {
+  type: 'task_update';
+  task_id: string;
+  image_id: string;
+  event: 'processing' | 'completed' | 'failed';
+  status: string;
+  result?: Record<string, unknown> | null;
+  error?: string | null;
+  timestamp?: string;
+}
+
+export interface AnalysisErrorMessage {
+  type: 'error';
+  message: string;
+}
+
+export type AnalysisSocketMessage = AnalysisTaskCreatedMessage | AnalysisTaskUpdateMessage | AnalysisErrorMessage | { type: string; [key: string]: unknown };
 
 export interface ApiErrorPayload {
   detail?: string | { message?: string; error?: string };
@@ -170,6 +206,68 @@ const requestBlob = async (path: string, retry = true): Promise<Blob> => {
   return response.blob();
 };
 
+const startAnalysisViaWebSocket = (payload: {
+  imageId: string;
+  modelConfigId: number;
+  classTypeIds: string[];
+  onMessage?: (message: AnalysisSocketMessage) => void;
+}) =>
+  new Promise<AnalysisTaskUpdateMessage>((resolve, reject) => {
+    const token = tokenStorage.getAccess();
+    if (!token) {
+      reject(new ApiError(401, { detail: 'Не найден access token' }));
+      return;
+    }
+
+    const socket = new WebSocket(`${getWebSocketBaseUrl()}/api/analyze/analysis?token=${encodeURIComponent(token)}`);
+    const timeout = window.setTimeout(() => {
+      socket.close();
+      reject(new Error('Таймаут ожидания результата анализа'));
+    }, 120_000);
+
+    socket.addEventListener('open', () => {
+      socket.send(JSON.stringify({ cmd: 'subscribe', image_id: payload.imageId }));
+      socket.send(
+        JSON.stringify({
+          cmd: 'start_analysis',
+          image_id: payload.imageId,
+          model_config_id: payload.modelConfigId,
+          class_type_ids: payload.classTypeIds
+        })
+      );
+    });
+
+    socket.addEventListener('message', (event) => {
+      const message = JSON.parse(event.data) as AnalysisSocketMessage;
+      payload.onMessage?.(message);
+
+      if (message.type === 'error') {
+        window.clearTimeout(timeout);
+        socket.close();
+        reject(new Error((message as AnalysisErrorMessage).message));
+      }
+
+      if (message.type === 'task_update') {
+        const update = message as AnalysisTaskUpdateMessage;
+        if (update.event === 'completed') {
+          window.clearTimeout(timeout);
+          socket.close();
+          resolve(update);
+        }
+        if (update.event === 'failed') {
+          window.clearTimeout(timeout);
+          socket.close();
+          reject(new Error(update.error ?? 'Анализ завершился ошибкой'));
+        }
+      }
+    });
+
+    socket.addEventListener('error', () => {
+      window.clearTimeout(timeout);
+      reject(new Error('WebSocket анализа недоступен'));
+    });
+  });
+
 export const api = {
   tokenStorage,
 
@@ -227,6 +325,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ model_ids: modelIds, class_name: className })
     }),
+  startAnalysisViaWebSocket,
   createAnnotation: (projectId: string, imageId: string, payload: AnnotationPayload) =>
     request<AnnotationResponse>(`/annotations/${projectId}/images/${imageId}`, {
       method: 'POST',
