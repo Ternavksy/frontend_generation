@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { Circle, Group, Image as KonvaImage, Layer, Line, Rect, Stage, Text } from 'react-konva';
 
 const FALLBACK_CANVAS_WIDTH = 1200;
 const FALLBACK_CANVAS_HEIGHT = 720;
+const CANVAS_PAN_DRAG_THRESHOLD = 4;
+const MIN_CANVAS_ZOOM = 0.6;
+const MAX_CANVAS_ZOOM = 8;
+const CANVAS_ZOOM_STEP = 1.25;
 const POLYGON_CORRECTION_MIN_SCREEN_DISTANCE = 4;
 const POLYGON_CORRECTION_HIT_SCREEN_DISTANCE = 34;
 
@@ -85,6 +90,7 @@ interface WorkspaceCanvasProps {
   onExportProject: () => void;
   onResetAnnotations: () => void;
   onSelectObject: (id: AnnotationObject['id'] | null) => void;
+  onDeleteObject: (id: AnnotationObject['id']) => void;
   onCreateObject: (object: Omit<AnnotationObject, 'id'>) => void;
   onUpdateObject: (id: AnnotationObject['id'], patch: Partial<AnnotationObject>) => void;
   onSplitObject: (id: AnnotationObject['id'], splitX: number) => void;
@@ -194,6 +200,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   onExportProject,
   onResetAnnotations,
   onSelectObject,
+  onDeleteObject,
   onCreateObject,
   onUpdateObject,
   onSplitObject
@@ -211,11 +218,15 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   const [drawingStart, setDrawingStart] = useState<PolygonPoint | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
   const [isShiftPressed, setIsShiftPressed] = useState(false);
-  const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(null);
   const [indexInput, setIndexInput] = useState(String(imageIndex + 1));
   const polygonCorrectionDraftRef = useRef<PolygonCorrectionDraft | null>(null);
+  const leftButtonDownRef = useRef(false);
+  const panStartRef = useRef<{ x: number; y: number } | null>(null);
+  const panStartScreenRef = useRef<PolygonPoint | null>(null);
+  const hasDraggedCanvasRef = useRef(false);
+  const isPanningRef = useRef(false);
+  const pendingPolygonClickRef = useRef<PolygonPoint | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -252,6 +263,12 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     setDraftBox(null);
     setDrawingStart(null);
     polygonCorrectionDraftRef.current = null;
+    leftButtonDownRef.current = false;
+    panStartRef.current = null;
+    panStartScreenRef.current = null;
+    hasDraggedCanvasRef.current = false;
+    isPanningRef.current = false;
+    pendingPolygonClickRef.current = null;
   }, [imageSrc]);
 
   useEffect(() => {
@@ -328,14 +345,22 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       setIsShiftPressed(false);
     };
 
+    const handleWindowMouseUp = () => {
+      leftButtonDownRef.current = false;
+      pendingPolygonClickRef.current = null;
+      stopCanvasPan();
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('blur', handleWindowBlur);
+    window.addEventListener('mouseup', handleWindowMouseUp);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
     };
   }, []);
 
@@ -386,7 +411,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   };
 
   const zoomAtPointer = (screenX: number, screenY: number, direction: 1 | -1) => {
-    const nextZoom = clamp(direction > 0 ? zoom * 1.15 : zoom / 1.15, 0.6, 4);
+    const nextZoom = clamp(direction > 0 ? zoom * CANVAS_ZOOM_STEP : zoom / CANVAS_ZOOM_STEP, MIN_CANVAS_ZOOM, MAX_CANVAS_ZOOM);
     const worldX = (screenX - offset.x) / canvasScale;
     const worldY = (screenY - offset.y) / canvasScale;
 
@@ -395,6 +420,63 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       x: screenX - worldX * baseScale * nextZoom,
       y: screenY - worldY * baseScale * nextZoom
     });
+  };
+
+  const getStagePointer = (event: any): PolygonPoint | null => {
+    const stage = event.target.getStage();
+    return stage?.getPointerPosition() ?? null;
+  };
+
+  const setCanvasPanning = (nextIsPanning: boolean) => {
+    isPanningRef.current = nextIsPanning;
+  };
+
+  const setCanvasPanStart = (nextPanStart: { x: number; y: number } | null) => {
+    panStartRef.current = nextPanStart;
+  };
+
+  const startCanvasPan = (event: any, immediate = true) => {
+    const pointer = getStagePointer(event);
+
+    if (!pointer) {
+      return;
+    }
+
+    setCanvasPanStart({ x: pointer.x - offset.x, y: pointer.y - offset.y });
+    panStartScreenRef.current = pointer;
+    hasDraggedCanvasRef.current = false;
+    setCanvasPanning(immediate);
+  };
+
+  const updateCanvasPan = (event: any) => {
+    const pointer = getStagePointer(event);
+    const currentPanStart = panStartRef.current;
+
+    if (!pointer || !currentPanStart) {
+      return false;
+    }
+
+    const startScreenPoint = panStartScreenRef.current;
+
+    if (!isPanningRef.current && startScreenPoint) {
+      const distance = Math.hypot(pointer.x - startScreenPoint.x, pointer.y - startScreenPoint.y);
+
+      if (distance < CANVAS_PAN_DRAG_THRESHOLD) {
+        return false;
+      }
+
+      setCanvasPanning(true);
+    }
+
+    hasDraggedCanvasRef.current = true;
+    setOffset({ x: pointer.x - currentPanStart.x, y: pointer.y - currentPanStart.y });
+    return true;
+  };
+
+  const stopCanvasPan = () => {
+    setCanvasPanning(false);
+    setCanvasPanStart(null);
+    panStartScreenRef.current = null;
   };
 
   const appendPolygonDraftPoint = (point: PolygonPoint, minDistance = 0) => {
@@ -1086,6 +1168,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 width={stageWidth}
                 height={stageHeight}
                 onMouseDown={(event) => {
+                  if (event.evt.button === 0) {
+                    leftButtonDownRef.current = true;
+                  }
+
                   if (activeTool === 'box') {
                     startBox(event);
                     return;
@@ -1102,7 +1188,8 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                       return;
                     }
 
-                    addPolygonPoint(event);
+                    pendingPolygonClickRef.current = getPointer(event);
+                    startCanvasPan(event, false);
                     return;
                   }
 
@@ -1122,33 +1209,43 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   }
 
                   if (activeTool === 'zoom') {
-                    const stage = event.target.getStage();
-                    const pointer = stage?.getPointerPosition();
-
-                    if (pointer) {
-                      zoomAtPointer(pointer.x, pointer.y, 1);
-                    }
+                    startCanvasPan(event, false);
                     return;
                   }
 
                   if (activeTool === 'move') {
-                    const stage = event.target.getStage();
-                    const pointer = stage?.getPointerPosition();
-
-                    if (pointer) {
-                      setIsPanning(true);
-                      setPanStart({ x: pointer.x - offset.x, y: pointer.y - offset.y });
-                    }
+                    startCanvasPan(event);
                     return;
                   }
 
                   if (activeTool === 'select') {
                     onSelectObject(null);
+                    if (event.target === event.target.getStage()) {
+                      startCanvasPan(event, false);
+                    }
+                    return;
+                  }
+
+                  if (!activeTool) {
+                    startCanvasPan(event);
                   }
                 }}
                 onMouseMove={(event) => {
                   if (activeTool === 'polygon') {
-                    updatePolygonCorrection(event);
+                    if (polygonCorrectionDraftRef.current) {
+                      updatePolygonCorrection(event);
+                      return;
+                    }
+
+                    if (pendingPolygonClickRef.current) {
+                      updateCanvasPan(event);
+                    }
+
+                    return;
+                  }
+
+                  if ((activeTool === 'select' || activeTool === 'move' || activeTool === 'zoom' || !activeTool) && panStartRef.current) {
+                    updateCanvasPan(event);
                     return;
                   }
 
@@ -1166,17 +1263,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     updateBrush(event);
                     return;
                   }
-
-                  if (activeTool === 'move' && isPanning && panStart) {
-                    const stage = event.target.getStage();
-                    const pointer = stage?.getPointerPosition();
-
-                    if (pointer) {
-                      setOffset({ x: pointer.x - panStart.x, y: pointer.y - panStart.y });
-                    }
-                  }
                 }}
                 onMouseUp={(event) => {
+                  leftButtonDownRef.current = false;
+
                   if (activeTool === 'polygon') {
                     const correctionDraft = polygonCorrectionDraftRef.current;
 
@@ -1187,6 +1277,29 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                         updatePolygonCorrectionDraft(null);
                       }
                     }
+
+                    if (pendingPolygonClickRef.current) {
+                      if (!hasDraggedCanvasRef.current) {
+                        addPolygonPoint(event);
+                      }
+
+                      pendingPolygonClickRef.current = null;
+                      stopCanvasPan();
+                    }
+                  }
+
+                  if (activeTool === 'zoom') {
+                    const pointer = getStagePointer(event);
+
+                    if (pointer && !hasDraggedCanvasRef.current) {
+                      zoomAtPointer(pointer.x, pointer.y, 1);
+                    }
+
+                    stopCanvasPan();
+                  }
+
+                  if (activeTool === 'select' || activeTool === 'move' || !activeTool) {
+                    stopCanvasPan();
                   }
 
                   if (activeTool === 'box') {
@@ -1201,15 +1314,18 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     finishBrush('erase');
                   }
 
-                  setIsPanning(false);
-                  setPanStart(null);
+                  if (activeTool !== 'polygon' && activeTool !== 'zoom' && activeTool !== 'move' && activeTool !== 'select' && activeTool) {
+                    stopCanvasPan();
+                  }
                 }}
                 onWheel={(event) => {
-                  event.evt.preventDefault();
+                  const shouldZoom = activeTool === 'zoom' || event.evt.buttons === 1 || leftButtonDownRef.current;
 
-                  if (activeTool !== 'zoom') {
+                  if (!shouldZoom) {
                     return;
                   }
+
+                  event.evt.preventDefault();
 
                   const pointer = event.target.getStage()?.getPointerPosition();
 
@@ -1217,12 +1333,16 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     return;
                   }
 
+                  if (event.evt.buttons === 1 || leftButtonDownRef.current) {
+                    hasDraggedCanvasRef.current = true;
+                  }
+
                   zoomAtPointer(pointer.x, pointer.y, event.evt.deltaY < 0 ? 1 : -1);
                 }}
               >
                 <Layer x={offset.x} y={offset.y} scaleX={canvasScale} scaleY={canvasScale}>
-                  <Rect x={0} y={0} width={imageSize.width} height={imageSize.height} fill="#0f172a" />
-                  {image && <KonvaImage image={image} width={imageSize.width} height={imageSize.height} />}
+                  <Rect x={0} y={0} width={imageSize.width} height={imageSize.height} fill="#0f172a" listening={false} />
+                  {image && <KonvaImage image={image} width={imageSize.width} height={imageSize.height} listening={false} />}
                 </Layer>
 
                 <Layer x={offset.x} y={offset.y} scaleX={canvasScale} scaleY={canvasScale}>
@@ -1393,26 +1513,34 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 const isSelected = selectedObjectId === object.id;
 
                 return (
-                  <button
+                  <div
                     key={object.id}
-                    type="button"
-                        onClick={() => onSelectObject(object.id)}
-                        className={`mb-2 w-full rounded-md border px-3 py-2 text-left ${
-                          isSelected ? 'border-brand-500/40 bg-brand-500/10' : 'border-slate-800 bg-slate-950'
-                        }`}
+                    className={`mb-2 rounded-md border ${
+                      isSelected ? 'border-brand-500/40 bg-brand-500/10' : 'border-slate-800 bg-slate-950'
+                    }`}
                   >
-                    <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.14em] text-slate-500">
-                      <span>{index + 1}</span>
-                      <span>{object.type}</span>
+                    <div className="flex items-start gap-2 px-3 py-2">
+                      <button type="button" onClick={() => onSelectObject(object.id)} className="min-w-0 flex-1 bg-transparent text-left">
+                        <div className="text-[11px] uppercase tracking-[0.14em] text-slate-500">{index + 1}</div>
+                        <div className="mt-1 text-sm font-medium text-slate-100">{object.label}</div>
+                        <div className="mt-1 text-xs text-slate-400">
+                          {object.source === 'imported' && 'Импорт из аннотаций'}
+                          {object.source === 'model' && `${object.modelName ?? 'Модель'}${object.score ? ` · ${Math.round(object.score * 100)}%` : ''}`}
+                          {object.source === 'manual' && object.type === 'brush' && object.operation === 'paint' && 'Ручная маска'}
+                          {object.source === 'manual' && object.type !== 'brush' && 'Ручная разметка'}
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteObject(object.id)}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-transparent text-slate-400 transition hover:border-rose-500/50 hover:bg-rose-500/10 hover:text-rose-200"
+                        aria-label={`Удалить объект ${index + 1}`}
+                        title="Удалить объект"
+                      >
+                        <Trash2 size={15} aria-hidden="true" />
+                      </button>
                     </div>
-                    <div className="mt-1 text-sm font-medium text-slate-100">{object.label}</div>
-                    <div className="mt-1 text-xs text-slate-400">
-                      {object.source === 'imported' && 'Импорт из аннотаций'}
-                      {object.source === 'model' && `${object.modelName ?? 'Модель'}${object.score ? ` · ${Math.round(object.score * 100)}%` : ''}`}
-                      {object.source === 'manual' && object.type === 'brush' && object.operation === 'paint' && 'Ручная маска'}
-                      {object.source === 'manual' && object.type !== 'brush' && 'Ручная разметка'}
-                    </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>

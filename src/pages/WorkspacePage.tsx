@@ -258,7 +258,6 @@ const WorkspacePage = () => {
 
   const currentImage = workspace.images[workspace.currentImageIndex];
   const objects = currentImage?.annotations ?? [];
-  const selectedObject = objects.find((item) => item.id === workspace.selectedObjectId) ?? null;
   const canPersistAnnotations = Boolean(selectedProjectId && currentImage && isUuid(currentImage.id));
 
   const hiddenLabels = useMemo(
@@ -1048,81 +1047,11 @@ const WorkspacePage = () => {
               onSelectObject={(id) =>
                 updateWorkspace((current) => ({ ...current, selectedObjectId: id }), { recordHistory: false })
               }
+              onDeleteObject={deleteObject}
               onCreateObject={createObject}
               onUpdateObject={updateObject}
               onSplitObject={splitObject}
             />
-
-            {selectedObject && (
-              <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="rounded-[24px] border border-slate-800 bg-slate-900/90 p-5">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">Сводка по выбранному объекту</h3>
-                      <p className="text-sm text-slate-400">Данные обновляются сразу при выделении или перемещении объекта на холсте.</p>
-                    </div>
-                    <div className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs text-slate-300">
-                      ID {selectedObject.id}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 md:grid-cols-4">
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                      <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Класс</div>
-                      <div className="mt-2 text-base font-medium text-white">{selectedObject.label}</div>
-                    </div>
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                      <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Тип</div>
-                      <div className="mt-2 text-base font-medium text-white">{selectedObject.type}</div>
-                    </div>
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                      <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Источник</div>
-                      <div className="mt-2 text-base font-medium text-white">{selectedObject.source}</div>
-                    </div>
-                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                      <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Уверенность</div>
-                      <div className="mt-2 text-base font-medium text-white">
-                        {selectedObject.score ? `${Math.round(selectedObject.score * 100)}%` : 'manual'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-[24px] border border-slate-800 bg-slate-900/90 p-5">
-                  <h3 className="text-lg font-semibold text-white">Быстрые действия</h3>
-                  <div className="mt-4 space-y-2">
-                    <button
-                      type="button"
-                      onClick={handleSave}
-                      className="w-full rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white"
-                    >
-                      Сохранить аннотации
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRunModels}
-                      className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-200"
-                    >
-                      Запустить выбранные модели
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDeleteSelected}
-                      className="w-full rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100"
-                    >
-                      Удалить выбранный объект
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleExportProject}
-                      className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-200"
-                    >
-                      Экспортировать проект
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </section>
 
           <section className="space-y-4">
