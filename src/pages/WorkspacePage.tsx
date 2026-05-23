@@ -1,12 +1,13 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, FolderPlus, Sparkles, Tags, Upload, Wand2 } from 'lucide-react';
+import { Wand2 } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import WorkspaceCanvas, {
   type ActiveToolMode,
   type AnnotationObject,
   type Area,
   type CompareViewMode,
+  type OpacityTargetMode,
   type PolygonPoint,
   type ToolMode
 } from '../components/WorkspaceCanvas';
@@ -26,6 +27,7 @@ interface ClassItem {
   source: 'imported' | 'manual' | 'model';
   color: string;
   visible: boolean;
+  opacity?: number;
 }
 
 interface WorkspaceImage {
@@ -249,6 +251,8 @@ const WorkspacePage = () => {
   const [statusMessage, setStatusMessage] = useState('Готово к разметке');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState<boolean>(() => Boolean(localStorage.getItem(STORAGE_KEY)));
+  const [opacityTargetMode, setOpacityTargetMode] = useState<OpacityTargetMode>('class');
+  const [opacityClassName, setOpacityClassName] = useState(initialState.activeLabel);
   const [history, setHistory] = useState<WorkspaceState[]>([cloneState(initialState)]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const historyRef = useRef<WorkspaceState[]>([cloneState(initialState)]);
@@ -264,6 +268,14 @@ const WorkspacePage = () => {
     () => workspace.classList.filter((item) => !item.visible).map((item) => item.name),
     [workspace.classList]
   );
+
+  useEffect(() => {
+    if (workspace.classList.some((item) => item.name === opacityClassName)) {
+      return;
+    }
+
+    setOpacityClassName(workspace.activeLabel || workspace.classList[0]?.name || '');
+  }, [opacityClassName, workspace.activeLabel, workspace.classList]);
   const comparisonOptions = useMemo(() => {
     const dynamic = new Set<string>();
 
@@ -848,6 +860,34 @@ const WorkspacePage = () => {
     );
   };
 
+  const updateClassOpacity = (name: string, opacity: number) => {
+    updateWorkspace(
+      (current) => ({
+        ...current,
+        maskOpacity: opacity,
+        classList: current.classList.map((item) => (item.name === name ? { ...item, opacity } : item))
+      }),
+      { recordHistory: false, status: `Прозрачность класса ${name}: ${Math.round(opacity * 100)}%` }
+    );
+  };
+
+  const updateObjectOpacity = (id: AnnotationObject['id'], opacity: number) => {
+    updateWorkspace(
+      (current) => ({
+        ...current,
+        images: current.images.map((image, index) =>
+          index === current.currentImageIndex
+            ? {
+                ...image,
+                annotations: image.annotations.map((item) => (item.id === id ? { ...item, opacity } : item))
+              }
+            : image
+        )
+      }),
+      { recordHistory: false, status: `Прозрачность объекта ${id}: ${Math.round(opacity * 100)}%` }
+    );
+  };
+
   const addClass = () => {
     const value = newClassName.trim();
 
@@ -991,7 +1031,7 @@ const WorkspacePage = () => {
       />
 
       <div className="mx-auto max-w-[1720px] px-4 pb-8 pt-4">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
           <section className="min-w-0">
             <WorkspaceCanvas
               activeTool={workspace.activeTool}
@@ -1015,9 +1055,18 @@ const WorkspacePage = () => {
                   }
                 )
               }
+              opacityTargetMode={opacityTargetMode}
+              opacityClassName={opacityClassName}
+              onOpacityTargetModeChange={setOpacityTargetMode}
+              onOpacityClassNameChange={setOpacityClassName}
+              onClassOpacityChange={updateClassOpacity}
+              onObjectOpacityChange={updateObjectOpacity}
               compareViewMode={workspace.compareViewMode}
               compareLeftSource={workspace.compareLeftSource}
               compareRightSource={workspace.compareRightSource}
+              classList={workspace.classList}
+              toolOptions={toolOptions}
+              newClassName={newClassName}
               imageName={currentImage.name}
               imageSrc={currentImage.src}
               imageIndex={workspace.currentImageIndex}
@@ -1048,6 +1097,15 @@ const WorkspacePage = () => {
                 updateWorkspace((current) => ({ ...current, selectedObjectId: id }), { recordHistory: false })
               }
               onDeleteObject={deleteObject}
+              onSelectClass={(name) =>
+                updateWorkspace((current) => ({ ...current, activeLabel: name }), {
+                  recordHistory: false,
+                  status: `Активный класс: ${name}`
+                })
+              }
+              onToggleClassVisibility={toggleClassVisibility}
+              onNewClassNameChange={setNewClassName}
+              onAddClass={addClass}
               onCreateObject={createObject}
               onUpdateObject={updateObject}
               onSplitObject={splitObject}
@@ -1055,7 +1113,7 @@ const WorkspacePage = () => {
           </section>
 
           <section className="space-y-4">
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               className="rounded-[24px] border border-slate-800 bg-slate-900/90 p-5"
@@ -1156,144 +1214,7 @@ const WorkspacePage = () => {
                   </p>
                 </div>
               </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="rounded-[24px] border border-slate-800 bg-slate-900/90 p-5"
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Классы и инструменты</h2>
-                  <p className="text-sm text-slate-400">Кнопки выбора label и инструментов обновляют холст сразу.</p>
-                </div>
-                <div className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs text-slate-300">
-                  {objects.length} объектов
-                </div>
-              </div>
-
-              <div className="mb-4 flex flex-wrap gap-2">
-                {toolOptions.map((tool) => (
-                  <button
-                    key={tool.id}
-                    type="button"
-                    onClick={() =>
-                      updateWorkspace(
-                        (current) => ({
-                          ...current,
-                          activeTool: current.activeTool === tool.id ? null : tool.id
-                        }),
-                        {
-                          recordHistory: false,
-                          status:
-                            workspace.activeTool === tool.id
-                              ? 'Инструмент выключен'
-                              : `Активный инструмент: ${tool.label}`
-                        }
-                      )
-                    }
-                    className={`rounded-full px-4 py-2 text-sm transition ${
-                      workspace.activeTool === tool.id
-                        ? 'bg-brand-500 text-white'
-                        : 'border border-slate-700 bg-slate-950 text-slate-300'
-                    }`}
-                  >
-                    {tool.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-2">
-                {workspace.classList.map((item) => (
-                  <div
-                    key={item.name}
-                    className={`flex items-center justify-between rounded-2xl border px-3 py-3 ${
-                      workspace.activeLabel === item.name
-                        ? 'border-brand-500 bg-brand-500/10'
-                        : 'border-slate-800 bg-slate-950'
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateWorkspace((current) => ({ ...current, activeLabel: item.name }), {
-                          recordHistory: false,
-                          status: `Активный класс: ${item.name}`
-                        })
-                      }
-                      className="flex items-center gap-3 text-left"
-                    >
-                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span>
-                        <span className="block text-sm font-medium text-white">{item.name}</span>
-                        <span className="block text-xs text-slate-500">
-                          {item.source === 'imported' && 'Импортирован из аннотаций'}
-                          {item.source === 'manual' && 'Добавлен пользователем'}
-                          {item.source === 'model' && 'Сгенерирован моделью'}
-                        </span>
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => toggleClassVisibility(item.name)}
-                      className={`rounded-full px-3 py-1 text-xs ${
-                        item.visible ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-800 text-slate-400'
-                      }`}
-                    >
-                      {item.visible ? 'Виден' : 'Скрыт'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                <div className="mb-2 text-sm font-medium text-white">Прозрачность слоя маски</div>
-                <div className="mb-3 text-xs text-slate-400">
-                  Отдельный mask-layer рисуется поверх изображения и регулируется этим ползунком.
-                </div>
-                <input
-                  type="range"
-                  min="10"
-                  max="100"
-                  value={Math.round(workspace.maskOpacity * 100)}
-                  onChange={(event) =>
-                    updateWorkspace(
-                      (current) => ({
-                        ...current,
-                        maskOpacity: Number(event.target.value) / 100
-                      }),
-                      {
-                        recordHistory: false,
-                        status: `Прозрачность маски: ${event.target.value}%`
-                      }
-                    )
-                  }
-                  className="w-full accent-brand-500"
-                />
-                <div className="mt-2 text-xs text-slate-300">
-                  {Math.round(workspace.maskOpacity * 100)}%
-                </div>
-              </div>
-
-              <div className="mt-4 flex gap-2">
-                <input
-                  value={newClassName}
-                  onChange={(event) => setNewClassName(event.target.value)}
-                  placeholder="Добавить свой класс"
-                  className="flex-1 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-                />
-                <button
-                  type="button"
-                  onClick={addClass}
-                  className="rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white"
-                >
-                  Добавить
-                </button>
-              </div>
-            </motion.div>
+            </motion.div> */}
 
             <motion.div
               initial={{ opacity: 0, y: 18 }}
@@ -1443,27 +1364,6 @@ const WorkspacePage = () => {
                     </label>
                   </div>
                 )}
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-300">
-                <div className="mb-2 flex items-center gap-2 font-medium text-white">
-                  <Sparkles size={16} />
-                  Сценарий работы
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <Check size={14} className="mt-0.5 text-emerald-300" />
-                    <span>Создаём проект, загружаем одно или несколько изображений и переключаемся по ним кнопками в toolbar.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check size={14} className="mt-0.5 text-emerald-300" />
-                    <span>Размечаем вручную через select, box, polygon, zoom и move.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check size={14} className="mt-0.5 text-emerald-300" />
-                    <span>Сохраняем, экспортируем или симулируем результаты моделей прямо во фронтенде.</span>
-                  </div>
-                </div>
               </div>
             </motion.div>
           </section>

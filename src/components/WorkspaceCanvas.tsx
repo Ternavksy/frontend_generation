@@ -48,11 +48,21 @@ export interface AnnotationObject {
   source: 'manual' | 'imported' | 'model';
   modelName?: string;
   score?: number;
+  opacity?: number;
   area?: Area;
   points?: PolygonPoint[];
 }
 
 export type CompareViewMode = 'single' | 'split';
+export type OpacityTargetMode = 'class' | 'object';
+
+export interface WorkspaceClassItem {
+  name: string;
+  source: 'imported' | 'manual' | 'model';
+  color: string;
+  visible: boolean;
+  opacity?: number;
+}
 
 interface WorkspaceCanvasProps {
   activeTool: ActiveToolMode;
@@ -60,9 +70,18 @@ interface WorkspaceCanvasProps {
   activeLabel: string;
   maskOpacity: number;
   onMaskOpacityChange: (opacity: number) => void;
+  opacityTargetMode: OpacityTargetMode;
+  opacityClassName: string;
+  onOpacityTargetModeChange: (mode: OpacityTargetMode) => void;
+  onOpacityClassNameChange: (name: string) => void;
+  onClassOpacityChange: (name: string, opacity: number) => void;
+  onObjectOpacityChange: (id: AnnotationObject['id'], opacity: number) => void;
   compareViewMode: CompareViewMode;
   compareLeftSource: string;
   compareRightSource: string;
+  classList: WorkspaceClassItem[];
+  toolOptions: Array<{ id: ToolMode; label: string }>;
+  newClassName: string;
   imageName: string;
   imageSrc: string;
   imageIndex: number;
@@ -91,6 +110,10 @@ interface WorkspaceCanvasProps {
   onResetAnnotations: () => void;
   onSelectObject: (id: AnnotationObject['id'] | null) => void;
   onDeleteObject: (id: AnnotationObject['id']) => void;
+  onSelectClass: (name: string) => void;
+  onToggleClassVisibility: (name: string) => void;
+  onNewClassNameChange: (name: string) => void;
+  onAddClass: () => void;
   onCreateObject: (object: Omit<AnnotationObject, 'id'>) => void;
   onUpdateObject: (id: AnnotationObject['id'], patch: Partial<AnnotationObject>) => void;
   onSplitObject: (id: AnnotationObject['id'], splitX: number) => void;
@@ -170,9 +193,18 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   activeLabel,
   maskOpacity,
   onMaskOpacityChange,
+  opacityTargetMode,
+  opacityClassName,
+  onOpacityTargetModeChange,
+  onOpacityClassNameChange,
+  onClassOpacityChange,
+  onObjectOpacityChange,
   compareViewMode,
   compareLeftSource,
   compareRightSource,
+  classList,
+  toolOptions,
+  newClassName,
   imageName,
   imageSrc,
   imageIndex,
@@ -201,6 +233,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   onResetAnnotations,
   onSelectObject,
   onDeleteObject,
+  onSelectClass,
+  onToggleClassVisibility,
+  onNewClassNameChange,
+  onAddClass,
   onCreateObject,
   onUpdateObject,
   onSplitObject
@@ -210,7 +246,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     width: FALLBACK_CANVAS_WIDTH,
     height: FALLBACK_CANVAS_HEIGHT
   });
-  const [stageWidth, setStageWidth] = useState(FALLBACK_CANVAS_WIDTH);
+  const [stageBounds, setStageBounds] = useState({
+    width: FALLBACK_CANVAS_WIDTH,
+    height: FALLBACK_CANVAS_HEIGHT
+  });
   const [draftBox, setDraftBox] = useState<Area | null>(null);
   const [polygonDraft, setPolygonDraft] = useState<PolygonPoint[]>([]);
   const [brushDraft, setBrushDraft] = useState<PolygonPoint[]>([]);
@@ -279,7 +318,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     }
 
     const updateStageSize = () => {
-      setStageWidth(element.clientWidth);
+      setStageBounds({
+        width: element.clientWidth,
+        height: element.clientHeight
+      });
     };
 
     updateStageSize();
@@ -365,6 +407,9 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   }, []);
 
   const imageAspectRatio = imageSize.height / imageSize.width;
+  const availableStageWidth = Math.max(320, stageBounds.width);
+  const availableStageHeight = Math.max(240, stageBounds.height);
+  const stageWidth = Math.round(Math.min(availableStageWidth, availableStageHeight / imageAspectRatio));
   const stageHeight = Math.round(stageWidth * imageAspectRatio);
   const baseScale = stageWidth / imageSize.width;
   const canvasScale = baseScale * zoom;
@@ -372,12 +417,14 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     () => objects.filter((item) => !hiddenLabels.includes(item.label)),
     [objects, hiddenLabels]
   );
+  const selectedObject = useMemo(
+    () => visibleObjects.find((item) => item.id === selectedObjectId) ?? null,
+    [selectedObjectId, visibleObjects]
+  );
   const selectedPolygonObject = useMemo(
     () =>
-      visibleObjects.find(
-        (item) => item.id === selectedObjectId && item.type === 'polygon' && (item.points?.length ?? 0) >= 3
-      ) ?? null,
-    [selectedObjectId, visibleObjects]
+      selectedObject?.type === 'polygon' && (selectedObject.points?.length ?? 0) >= 3 ? selectedObject : null,
+    [selectedObject]
   );
   const isPolygonCorrectionMode = activeTool === 'polygon' && (isShiftPressed || Boolean(polygonCorrectionDraft));
   const listedObjects = useMemo(
@@ -386,6 +433,13 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   );
   const getObjectsForSource = (sourceKey: string) =>
     visibleObjects.filter((item) => getObjectSourceKey(item) === sourceKey);
+  const selectedOpacityClass = classList.find((item) => item.name === opacityClassName) ?? classList[0] ?? null;
+  const currentOpacity =
+    opacityTargetMode === 'object' && selectedObject
+      ? selectedObject.opacity ?? classList.find((item) => item.name === selectedObject.label)?.opacity ?? maskOpacity
+      : selectedOpacityClass?.opacity ?? maskOpacity;
+  const getObjectOpacity = (object: AnnotationObject) =>
+    object.opacity ?? classList.find((item) => item.name === object.label)?.opacity ?? maskOpacity;
 
   const comparisonLeftObjects = useMemo(
     () => (compareViewMode === 'split' ? getObjectsForSource(compareLeftSource) : visibleObjects),
@@ -477,6 +531,20 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     setCanvasPanning(false);
     setCanvasPanStart(null);
     panStartScreenRef.current = null;
+  };
+
+  const updateCurrentOpacity = (opacity: number) => {
+    if (opacityTargetMode === 'object' && selectedObject) {
+      onObjectOpacityChange(selectedObject.id, opacity);
+      return;
+    }
+
+    if (selectedOpacityClass) {
+      onClassOpacityChange(selectedOpacityClass.name, opacity);
+      return;
+    }
+
+    onMaskOpacityChange(opacity);
   };
 
   const appendPolygonDraftPoint = (point: PolygonPoint, minDistance = 0) => {
@@ -886,7 +954,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   stroke={stroke}
                   strokeWidth={isSelected ? 3 : 2}
                   fill={fill}
-                  opacity={maskOpacity}
+                  opacity={getObjectOpacity(object)}
                   onClick={() => onSelectObject(object.id)}
                 />
                 <Text
@@ -910,7 +978,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   strokeWidth={16}
                   lineCap="round"
                   lineJoin="round"
-                  opacity={maskOpacity}
+                  opacity={getObjectOpacity(object)}
                   tension={0.25}
                   globalCompositeOperation="source-over"
                   onClick={() => onSelectObject(object.id)}
@@ -958,6 +1026,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 stroke={stroke}
                 strokeWidth={isSelected ? 3 : 2}
                 fill={fill}
+                opacity={getObjectOpacity(object)}
                 dash={isSelected ? [8, 4] : undefined}
                 draggable={activeTool === 'select'}
                 onClick={() => onSelectObject(object.id)}
@@ -987,7 +1056,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   };
 
   return (
-    <div className="flex h-full min-h-[760px] min-w-0 flex-col rounded-[24px] border border-slate-800 bg-slate-900/95 shadow-[0_24px_80px_rgba(15,23,42,0.38)]">
+    <div className="flex h-[calc(100vh-9.5rem)] min-h-[520px] min-w-0 flex-col rounded-[24px] border border-slate-800 bg-slate-900/95 shadow-[0_24px_80px_rgba(15,23,42,0.38)]">
       {activeTool === 'polygon' && (
         <div className="flex items-center justify-end border-b border-slate-800 bg-slate-950/90 px-5 py-3">
           <button
@@ -1158,11 +1227,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
         </div>
 
         <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_292px]">
-          <div className="min-h-0 bg-slate-900 p-3">
+          <div className="min-h-0 overflow-hidden bg-slate-900 p-3">
             <div
               ref={containerRef}
-              className="relative flex items-center justify-center overflow-hidden rounded-[18px] border border-slate-800 bg-slate-950"
-              style={{ minHeight: stageHeight }}
+              className="relative flex h-full min-h-0 items-center justify-center overflow-hidden rounded-[18px] border border-slate-800 bg-slate-950"
             >
               <Stage
                 width={stageWidth}
@@ -1500,7 +1568,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
             </div>
           </div>
 
-          <aside className="border-l border-slate-800 bg-slate-900/95">
+          <aside className="flex min-h-0 flex-col border-l border-slate-800 bg-slate-900/95">
             <div className="border-b border-slate-800 bg-slate-950/80 px-4 py-3">
               <div className="flex items-center justify-between text-sm font-semibold text-slate-100">
                 <span>Objects</span>
@@ -1508,7 +1576,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
               </div>
             </div>
 
-            <div className="max-h-[360px] overflow-y-auto p-3">
+            <div className="max-h-[160px] overflow-y-auto p-3">
               {listedObjects.map((object, index) => {
                 const isSelected = selectedObjectId === object.id;
 
@@ -1547,34 +1615,124 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
             <div className="border-t border-slate-800 bg-slate-950/70 px-4 py-3">
               <div className="text-sm font-semibold text-slate-100">Appearance</div>
-              <div className="mt-3 text-xs text-slate-400">
-                Активный класс: <span className="font-semibold text-slate-100">{activeLabel}</span>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">
+                <div>
+                  Класс: <span className="font-semibold text-slate-100">{activeLabel}</span>
+                </div>
+                <div>
+                  Zoom: <span className="font-semibold text-slate-100">{zoom.toFixed(2)}x</span>
+                </div>
               </div>
-              <div className="mt-2 text-xs text-slate-400">
-                Режим: <span className="font-semibold text-slate-100">{activeTool}</span>
+              <div className="mt-3 flex rounded-xl border border-slate-800 bg-slate-950 p-1">
+                {(['class', 'object'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => onOpacityTargetModeChange(mode)}
+                    className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition ${
+                      opacityTargetMode === mode ? 'bg-brand-500 text-white' : 'bg-transparent text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {mode === 'class' ? 'Класс' : 'Объект'}
+                  </button>
+                ))}
               </div>
-              <div className="mt-2 text-xs text-slate-400">
-                Zoom: <span className="font-semibold text-slate-100">{zoom.toFixed(2)}x</span>
-              </div>
-              <div className="mt-2 text-xs text-slate-400">
-                Прозрачность маски: <span className="font-semibold text-slate-100">{Math.round(maskOpacity * 100)}%</span>
-              </div>
-              <div className="mt-4">
-                <div className="mb-2 text-xs text-slate-500">Opacity</div>
+              {opacityTargetMode === 'class' && (
+                <select
+                  value={selectedOpacityClass?.name ?? ''}
+                  onChange={(event) => onOpacityClassNameChange(event.target.value)}
+                  className="mt-3 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100"
+                >
+                  {classList.map((item) => (
+                    <option key={item.name} value={item.name}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {opacityTargetMode === 'object' && (
+                <div className="mt-3 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300">
+                  {selectedObject ? `Объект: ${selectedObject.label}` : 'Выберите объект'}
+                </div>
+              )}
+              <div className="mt-3">
+                <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
+                  <span>Opacity</span>
+                  <span className="text-slate-300">{Math.round(currentOpacity * 100)}%</span>
+                </div>
                 <input
                   type="range"
                   min="10"
                   max="100"
-                  value={Math.round(maskOpacity * 100)}
-                  onChange={(event) => onMaskOpacityChange(Number(event.target.value) / 100)}
+                  value={Math.round(currentOpacity * 100)}
+                  onChange={(event) => updateCurrentOpacity(Number(event.target.value) / 100)}
+                  disabled={opacityTargetMode === 'object' && !selectedObject}
                   className="w-full accent-brand-500"
                 />
               </div>
-              <div className="mt-4">
-                <div className="mb-2 text-xs text-slate-500">Status</div>
-                <div className="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300">
-                  {statusMessage}
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto border-t border-slate-800 px-4 py-3">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-sm font-semibold text-slate-100">Классы и инструменты</div>
+                  <div className="text-[11px] text-slate-500">{objects.length} объектов</div>
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {toolOptions.map((tool) => (
+                  <button
+                    key={tool.id}
+                    type="button"
+                    onClick={() => onToolChange(activeTool === tool.id ? null : tool.id)}
+                    className={`rounded-xl px-3 py-2 text-xs transition ${
+                      activeTool === tool.id
+                        ? 'bg-brand-500 text-white'
+                        : 'border border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-700'
+                    }`}
+                  >
+                    {tool.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-3 space-y-2">
+                {classList.map((item) => (
+                  <div
+                    key={item.name}
+                    className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 ${
+                      activeLabel === item.name ? 'border-brand-500 bg-brand-500/10' : 'border-slate-800 bg-slate-950'
+                    }`}
+                  >
+                    <button type="button" onClick={() => onSelectClass(item.name)} className="min-w-0 flex-1 bg-transparent text-left">
+                      <span className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="truncate text-sm font-medium text-white">{item.name}</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onToggleClassVisibility(item.name)}
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] ${
+                        item.visible ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {item.visible ? 'Виден' : 'Скрыт'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                <input
+                  value={newClassName}
+                  onChange={(event) => onNewClassNameChange(event.target.value)}
+                  placeholder="Новый класс"
+                  className="min-w-0 flex-1 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white"
+                />
+                <button type="button" onClick={onAddClass} className="rounded-xl bg-brand-500 px-3 py-2 text-sm font-semibold text-white">
+                  +
+                </button>
               </div>
             </div>
           </aside>
