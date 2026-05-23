@@ -3,14 +3,11 @@ import { Circle, Group, Image as KonvaImage, Layer, Line, Rect, Stage, Text } fr
 
 const FALLBACK_CANVAS_WIDTH = 1200;
 const FALLBACK_CANVAS_HEIGHT = 720;
+const POLYGON_CORRECTION_MIN_SCREEN_DISTANCE = 4;
+const POLYGON_CORRECTION_HIT_SCREEN_DISTANCE = 34;
 
 export type ToolMode = 'select' | 'box' | 'polygon' | 'zoom' | 'move' | 'brush' | 'eraser' | 'split';
 export type ActiveToolMode = ToolMode | null;
-
-export interface WorkspaceNavItem {
-  key: 'Projects' | 'Tasks' | 'Jobs' | 'Cloud Storages' | 'Requests' | 'Models';
-  label: string;
-}
 
 export interface Area {
   x: number;
@@ -22,6 +19,19 @@ export interface Area {
 export interface PolygonPoint {
   x: number;
   y: number;
+}
+
+interface PolygonCorrectionDraft {
+  target: 'draft' | 'object';
+  objectId?: AnnotationObject['id'];
+  startIndex: number;
+  points: PolygonPoint[];
+  hasMoved: boolean;
+}
+
+interface PolygonDraftHit {
+  index: number;
+  distance: number;
 }
 
 export interface AnnotationObject {
@@ -40,9 +50,6 @@ export interface AnnotationObject {
 export type CompareViewMode = 'single' | 'split';
 
 interface WorkspaceCanvasProps {
-  navItems: WorkspaceNavItem[];
-  activeNav: WorkspaceNavItem['key'];
-  onNavChange: (nav: WorkspaceNavItem['key']) => void;
   activeTool: ActiveToolMode;
   onToolChange: (tool: ActiveToolMode) => void;
   activeLabel: string;
@@ -97,19 +104,46 @@ const getPolygonBounds = (points: PolygonPoint[]): Area => {
   };
 };
 
-const groupMaskObjectsByLabel = (items: AnnotationObject[]) => {
-  const grouped = new Map<string, AnnotationObject[]>();
-
-  items.forEach((item) => {
-    const current = grouped.get(item.label) ?? [];
-    current.push(item);
-    grouped.set(item.label, current);
+const dedupeConsecutivePoints = (points: PolygonPoint[]) =>
+  points.filter((point, index) => {
+    const previous = points[index - 1];
+    return !previous || Math.hypot(point.x - previous.x, point.y - previous.y) >= 0.5;
   });
 
-  return Array.from(grouped.entries()).map(([label, groupedItems]) => ({
-    label,
-    items: groupedItems
-  }));
+const replacePolygonSegment = (
+  points: PolygonPoint[],
+  startIndex: number,
+  endIndex: number,
+  correctionPoints: PolygonPoint[]
+) => {
+  if (
+    startIndex < 0 ||
+    endIndex < 0 ||
+    startIndex >= points.length ||
+    endIndex >= points.length ||
+    startIndex === endIndex
+  ) {
+    return points;
+  }
+
+  const path = dedupeConsecutivePoints([
+    points[startIndex],
+    ...correctionPoints.slice(1),
+    points[endIndex]
+  ]);
+
+  if (startIndex < endIndex) {
+    return [
+      ...points.slice(0, startIndex),
+      ...path,
+      ...points.slice(endIndex + 1)
+    ];
+  }
+
+  return [
+    ...path,
+    ...points.slice(endIndex + 1, startIndex)
+  ];
 };
 
 const getObjectSourceKey = (object: AnnotationObject) => {
@@ -125,9 +159,6 @@ const getObjectSourceKey = (object: AnnotationObject) => {
 };
 
 const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
-  navItems,
-  activeNav,
-  onNavChange,
   activeTool,
   onToolChange,
   activeLabel,
@@ -176,12 +207,15 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   const [draftBox, setDraftBox] = useState<Area | null>(null);
   const [polygonDraft, setPolygonDraft] = useState<PolygonPoint[]>([]);
   const [brushDraft, setBrushDraft] = useState<PolygonPoint[]>([]);
+  const [polygonCorrectionDraft, setPolygonCorrectionDraft] = useState<PolygonCorrectionDraft | null>(null);
   const [drawingStart, setDrawingStart] = useState<PolygonPoint | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [isShiftPressed, setIsShiftPressed] = useState(false);
   const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(null);
   const [indexInput, setIndexInput] = useState(String(imageIndex + 1));
+  const polygonCorrectionDraftRef = useRef<PolygonCorrectionDraft | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -213,9 +247,11 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     setZoom(1);
     setOffset({ x: 0, y: 0 });
     setPolygonDraft([]);
+    setPolygonCorrectionDraft(null);
     setBrushDraft([]);
     setDraftBox(null);
     setDrawingStart(null);
+    polygonCorrectionDraftRef.current = null;
   }, [imageSrc]);
 
   useEffect(() => {
@@ -271,6 +307,38 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     };
   }, [isMenuOpen, onCloseMenu]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Shift') {
+        setIsShiftPressed(true);
+      }
+
+      if (event.key === 'Escape') {
+        updatePolygonCorrectionDraft(null);
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === 'Shift') {
+        setIsShiftPressed(false);
+      }
+    };
+
+    const handleWindowBlur = () => {
+      setIsShiftPressed(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleWindowBlur);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, []);
+
   const imageAspectRatio = imageSize.height / imageSize.width;
   const stageHeight = Math.round(stageWidth * imageAspectRatio);
   const baseScale = stageWidth / imageSize.width;
@@ -279,6 +347,14 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     () => objects.filter((item) => !hiddenLabels.includes(item.label)),
     [objects, hiddenLabels]
   );
+  const selectedPolygonObject = useMemo(
+    () =>
+      visibleObjects.find(
+        (item) => item.id === selectedObjectId && item.type === 'polygon' && (item.points?.length ?? 0) >= 3
+      ) ?? null,
+    [selectedObjectId, visibleObjects]
+  );
+  const isPolygonCorrectionMode = activeTool === 'polygon' && (isShiftPressed || Boolean(polygonCorrectionDraft));
   const listedObjects = useMemo(
     () => visibleObjects.filter((item) => !(item.type === 'brush' && item.operation === 'erase')),
     [visibleObjects]
@@ -318,6 +394,130 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     setOffset({
       x: screenX - worldX * baseScale * nextZoom,
       y: screenY - worldY * baseScale * nextZoom
+    });
+  };
+
+  const appendPolygonDraftPoint = (point: PolygonPoint, minDistance = 0) => {
+    setPolygonDraft((current) => {
+      const lastPoint = current[current.length - 1];
+
+      if (lastPoint && Math.hypot(point.x - lastPoint.x, point.y - lastPoint.y) < minDistance) {
+        return current;
+      }
+
+      return [...current, point];
+    });
+  };
+
+  const updatePolygonCorrectionDraft = (nextDraft: PolygonCorrectionDraft | null) => {
+    polygonCorrectionDraftRef.current = nextDraft;
+    setPolygonCorrectionDraft(nextDraft);
+  };
+
+  const findNearestPolygonPoint = (
+    points: PolygonPoint[],
+    point: PolygonPoint,
+    maxDistance: number
+  ): PolygonDraftHit | null => {
+    let closest: PolygonDraftHit | null = null;
+
+    points.forEach((draftPoint, index) => {
+      const distance = Math.hypot(point.x - draftPoint.x, point.y - draftPoint.y);
+
+      if (distance <= maxDistance && (!closest || distance < closest.distance)) {
+        closest = { index, distance };
+      }
+    });
+
+    return closest;
+  };
+
+  const getPolygonCorrectionTarget = (draft = polygonCorrectionDraftRef.current) => {
+    if (draft?.target === 'object') {
+      const object = visibleObjects.find(
+        (item) => item.id === draft.objectId && item.type === 'polygon' && (item.points?.length ?? 0) >= 3
+      );
+
+      if (!object?.points) {
+        return null;
+      }
+
+      return {
+        target: 'object' as const,
+        objectId: object.id,
+        points: object.points
+      };
+    }
+
+    if (polygonDraft.length >= 3) {
+      return {
+        target: 'draft' as const,
+        points: polygonDraft
+      };
+    }
+
+    if (selectedPolygonObject?.points) {
+      return {
+        target: 'object' as const,
+        objectId: selectedPolygonObject.id,
+        points: selectedPolygonObject.points
+      };
+    }
+
+    return null;
+  };
+
+  const appendPolygonCorrectionPoint = (point: PolygonPoint) => {
+    const draft = polygonCorrectionDraftRef.current;
+
+    if (!draft) {
+      return;
+    }
+
+    const lastPoint = draft.points[draft.points.length - 1];
+    const minDistance = POLYGON_CORRECTION_MIN_SCREEN_DISTANCE / canvasScale;
+
+    if (lastPoint && Math.hypot(point.x - lastPoint.x, point.y - lastPoint.y) < minDistance) {
+      return;
+    }
+
+    updatePolygonCorrectionDraft({
+      ...draft,
+      points: [...draft.points, point],
+      hasMoved: true
+    });
+  };
+
+  const applyPolygonCorrection = (
+    correctionDraft: PolygonCorrectionDraft,
+    endIndex: number,
+    correctionPoints: PolygonPoint[]
+  ) => {
+    const target = getPolygonCorrectionTarget(correctionDraft);
+
+    if (!target) {
+      return;
+    }
+
+    const nextPoints = replacePolygonSegment(
+      target.points,
+      correctionDraft.startIndex,
+      endIndex,
+      correctionPoints
+    );
+
+    if (nextPoints.length < 3) {
+      return;
+    }
+
+    if (target.target === 'draft') {
+      setPolygonDraft(nextPoints);
+      return;
+    }
+
+    onUpdateObject(target.objectId, {
+      points: nextPoints,
+      area: getPolygonBounds(nextPoints)
     });
   };
 
@@ -393,8 +593,105 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       }
     }
 
-    setPolygonDraft((current) => [...current, pointer]);
+    appendPolygonDraftPoint(pointer);
     onSelectObject(null);
+  };
+
+  const startPolygonCorrection = (event: any) => {
+    if (event.evt.button !== 0) {
+      return;
+    }
+
+    const pointer = getPointer(event);
+
+    if (!pointer) {
+      return;
+    }
+
+    const target = getPolygonCorrectionTarget();
+
+    if (!target) {
+      return;
+    }
+
+    const nearest = findNearestPolygonPoint(target.points, pointer, POLYGON_CORRECTION_HIT_SCREEN_DISTANCE / canvasScale);
+
+    if (!nearest) {
+      return;
+    }
+
+    event.evt.preventDefault();
+    updatePolygonCorrectionDraft({
+      target: target.target,
+      objectId: target.target === 'object' ? target.objectId : undefined,
+      startIndex: nearest.index,
+      points: dedupeConsecutivePoints([target.points[nearest.index], pointer]),
+      hasMoved: false
+    });
+    if (target.target === 'draft') {
+      onSelectObject(null);
+    }
+  };
+
+  const updatePolygonCorrection = (event: any) => {
+    if (!polygonCorrectionDraftRef.current) {
+      return;
+    }
+
+    const pointer = getPointer(event);
+
+    if (!pointer) {
+      return;
+    }
+
+    appendPolygonCorrectionPoint(pointer);
+  };
+
+  const finishPolygonCorrection = (event: any) => {
+    const correctionDraft = polygonCorrectionDraftRef.current;
+
+    if (!correctionDraft) {
+      return false;
+    }
+
+    const pointer = getPointer(event);
+
+    if (!pointer) {
+      return false;
+    }
+
+    const target = getPolygonCorrectionTarget(correctionDraft);
+    const correctionPoints = dedupeConsecutivePoints([...correctionDraft.points, pointer]);
+
+    if (!target) {
+      return false;
+    }
+
+    const nearest = findNearestPolygonPoint(target.points, pointer, POLYGON_CORRECTION_HIT_SCREEN_DISTANCE / canvasScale);
+
+    if (nearest && nearest.index !== correctionDraft.startIndex && correctionPoints.length > 1) {
+      applyPolygonCorrection(correctionDraft, nearest.index, correctionPoints);
+      updatePolygonCorrectionDraft(null);
+      return true;
+    }
+
+    return false;
+  };
+
+  const finishPolygonDraft = () => {
+    if (polygonDraft.length < 3) {
+      return;
+    }
+
+    onCreateObject({
+      type: 'polygon',
+      label: activeLabel,
+      color: '#7CFC8A',
+      source: 'manual',
+      points: polygonDraft,
+      area: getPolygonBounds(polygonDraft)
+    });
+    setPolygonDraft([]);
   };
 
   const startBrush = (event: any) => {
@@ -469,93 +766,86 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     const paintMaskObjects = localMaskObjects.filter(
       (item) => !(item.type === 'brush' && item.operation === 'erase')
     );
-    const eraseMaskObjects = localMaskObjects.filter(
-      (item) => item.type === 'brush' && item.operation === 'erase'
-    );
-    const localGroupedMaskObjects = groupMaskObjectsByLabel(paintMaskObjects);
 
     return (
       <>
-        {localGroupedMaskObjects.map(({ label, items: groupedItems }, groupIndex) => (
-          <Group key={label}>
-            {groupedItems.map((object, itemIndex) => {
-              const isSelected = selectedObjectId === object.id;
-              const stroke = isSelected ? '#8cfb95' : object.color;
-              const fill = isSelected ? 'rgba(124, 252, 138, 0.28)' : 'rgba(124, 252, 138, 0.18)';
-
-              if (object.type === 'polygon' && object.points) {
-                return (
-                  <Group key={object.id}>
-                    <Line
-                      points={object.points.flatMap((point) => [point.x, point.y])}
-                      closed
-                      stroke={stroke}
-                      strokeWidth={isSelected ? 3 : 2}
-                      fill={fill}
-                      opacity={maskOpacity}
-                      onClick={() => onSelectObject(object.id)}
-                    />
-                    <Text
-                      x={object.points[0]?.x ?? 0}
-                      y={(object.points[0]?.y ?? 0) - 18}
-                      text={`${groupIndex + itemIndex + 1} ${object.label}`}
-                      fill="#152017"
-                      fontSize={14}
-                      padding={4}
-                    />
-                  </Group>
-                );
-              }
-
-              if (object.type === 'brush' && object.points) {
-                return (
-                  <Group key={object.id}>
-                    <Line
-                      points={object.points.flatMap((point) => [point.x, point.y])}
-                      stroke={stroke}
-                      strokeWidth={16}
-                      lineCap="round"
-                      lineJoin="round"
-                      opacity={maskOpacity}
-                      tension={0.25}
-                      globalCompositeOperation="source-over"
-                      onClick={() => onSelectObject(object.id)}
-                    />
-                    <Text
-                      x={object.points[0]?.x ?? 0}
-                      y={(object.points[0]?.y ?? 0) - 18}
-                      text={`${groupIndex + itemIndex + 1} ${object.label}`}
-                      fill="#d8ffe2"
-                      fontSize={14}
-                      padding={4}
-                    />
-                  </Group>
-                );
-              }
-
-              return null;
-            })}
-          </Group>
-        ))}
-
-        {eraseMaskObjects.map((object) => {
-          if (object.type !== 'brush' || !object.points) {
+        {localMaskObjects.map((object) => {
+          if (!object.points) {
             return null;
           }
 
-          return (
-            <Line
-              key={object.id}
-              points={object.points.flatMap((point) => [point.x, point.y])}
-              stroke="#000000"
-              strokeWidth={24}
-              lineCap="round"
-              lineJoin="round"
-              tension={0.25}
-              globalCompositeOperation="destination-out"
-              listening={false}
-            />
-          );
+          if (object.type === 'brush' && object.operation === 'erase') {
+            return (
+              <Line
+                key={object.id}
+                points={object.points.flatMap((point) => [point.x, point.y])}
+                stroke="#000000"
+                strokeWidth={24}
+                lineCap="round"
+                lineJoin="round"
+                tension={0.25}
+                globalCompositeOperation="destination-out"
+                listening={false}
+              />
+            );
+          }
+
+          const isSelected = selectedObjectId === object.id;
+          const stroke = isSelected ? '#8cfb95' : object.color;
+          const fill = isSelected ? 'rgba(124, 252, 138, 0.28)' : 'rgba(124, 252, 138, 0.18)';
+          const listedIndex = paintMaskObjects.findIndex((item) => item.id === object.id);
+
+          if (object.type === 'polygon') {
+            return (
+              <Group key={object.id}>
+                <Line
+                  points={object.points.flatMap((point) => [point.x, point.y])}
+                  closed
+                  stroke={stroke}
+                  strokeWidth={isSelected ? 3 : 2}
+                  fill={fill}
+                  opacity={maskOpacity}
+                  onClick={() => onSelectObject(object.id)}
+                />
+                <Text
+                  x={object.points[0]?.x ?? 0}
+                  y={(object.points[0]?.y ?? 0) - 18}
+                  text={`${listedIndex + 1} ${object.label}`}
+                  fill="#152017"
+                  fontSize={14}
+                  padding={4}
+                />
+              </Group>
+            );
+          }
+
+          if (object.type === 'brush') {
+            return (
+              <Group key={object.id}>
+                <Line
+                  points={object.points.flatMap((point) => [point.x, point.y])}
+                  stroke={stroke}
+                  strokeWidth={16}
+                  lineCap="round"
+                  lineJoin="round"
+                  opacity={maskOpacity}
+                  tension={0.25}
+                  globalCompositeOperation="source-over"
+                  onClick={() => onSelectObject(object.id)}
+                />
+                <Text
+                  x={object.points[0]?.x ?? 0}
+                  y={(object.points[0]?.y ?? 0) - 18}
+                  text={`${listedIndex + 1} ${object.label}`}
+                  fill="#d8ffe2"
+                  fontSize={14}
+                  padding={4}
+                />
+              </Group>
+            );
+          }
+
+          return null;
         })}
       </>
     );
@@ -616,26 +906,19 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
   return (
     <div className="flex h-full min-h-[760px] min-w-0 flex-col rounded-[24px] border border-slate-800 bg-slate-900/95 shadow-[0_24px_80px_rgba(15,23,42,0.38)]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/90 px-5 py-3 text-[12px] text-slate-400">
-        <div className="flex items-center gap-3">
-          <span className="font-semibold uppercase tracking-[0.28em] text-white">SegLabel AI</span>
-          {navItems.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => onNavChange(item.key)}
-              className={`rounded-full px-3 py-1 text-sm transition ${
-                activeNav === item.key
-                  ? 'border border-brand-500/30 bg-brand-500/10 text-brand-100'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+      {activeTool === 'polygon' && (
+        <div className="flex items-center justify-end border-b border-slate-800 bg-slate-950/90 px-5 py-3">
+          <button
+            type="button"
+            onClick={finishPolygonDraft}
+            disabled={polygonDraft.length < 3}
+            className="h-9 rounded-lg bg-brand-500 px-5 text-sm font-semibold text-white transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+            title="Завершить полигон"
+          >
+            Done
+          </button>
         </div>
-        <div className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-slate-200">admin.annotator</div>
-      </div>
+      )}
 
       <div className="relative z-30 flex flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-900 px-4 py-3 text-slate-300">
         <div className="flex items-center gap-2">
@@ -758,7 +1041,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
             {[
               { id: 'select' as ToolMode, icon: '✥', label: 'Выбор', hint: 'Выбор и перемещение уже созданных объектов.' },
               { id: 'box' as ToolMode, icon: '▭', label: 'Box', hint: 'Создание прямоугольной области на изображении.' },
-              { id: 'polygon' as ToolMode, icon: '⬠', label: 'Polygon', hint: 'Покадровое выделение объекта по точкам.' },
+              { id: 'polygon' as ToolMode, icon: '⬠', label: 'Polygon', hint: 'Клики ставят точки. Shift подсвечивает точки; клик-точка, ведение, клик-точка заменяет участок.' },
               { id: 'brush' as ToolMode, icon: '🖌', label: 'Кисть', hint: 'Ручная дорисовка маски выбранного класса.' },
               { id: 'eraser' as ToolMode, icon: '⌫', label: 'Ластик', hint: 'Частичное стирание маски выбранного класса.' },
               { id: 'split' as ToolMode, icon: '✂', label: 'Разделение', hint: 'Разделение выбранного bounding box на две части.' },
@@ -809,6 +1092,16 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   }
 
                   if (activeTool === 'polygon') {
+                    if (polygonCorrectionDraftRef.current) {
+                      finishPolygonCorrection(event);
+                      return;
+                    }
+
+                    if (event.evt.shiftKey || isShiftPressed) {
+                      startPolygonCorrection(event);
+                      return;
+                    }
+
                     addPolygonPoint(event);
                     return;
                   }
@@ -854,6 +1147,11 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   }
                 }}
                 onMouseMove={(event) => {
+                  if (activeTool === 'polygon') {
+                    updatePolygonCorrection(event);
+                    return;
+                  }
+
                   if (activeTool === 'box') {
                     updateBox(event);
                     return;
@@ -878,7 +1176,19 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     }
                   }
                 }}
-                onMouseUp={() => {
+                onMouseUp={(event) => {
+                  if (activeTool === 'polygon') {
+                    const correctionDraft = polygonCorrectionDraftRef.current;
+
+                    if (correctionDraft?.hasMoved) {
+                      const didFinish = finishPolygonCorrection(event);
+
+                      if (!didFinish) {
+                        updatePolygonCorrectionDraft(null);
+                      }
+                    }
+                  }
+
                   if (activeTool === 'box') {
                     finishBox();
                   }
@@ -985,11 +1295,60 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     />
                   )}
 
+                  {selectedPolygonObject?.points &&
+                    activeTool === 'polygon' &&
+                    polygonDraft.length === 0 &&
+                    (isShiftPressed ||
+                      (polygonCorrectionDraft?.target === 'object' &&
+                        polygonCorrectionDraft.objectId === selectedPolygonObject.id)) &&
+                    selectedPolygonObject.points.map((point, index) => (
+                      <Circle
+                        key={`${selectedPolygonObject.id}-handle-${index}`}
+                        x={point.x}
+                        y={point.y}
+                        radius={8 / canvasScale}
+                        fill="#f8fafc"
+                        stroke="#16a34a"
+                        strokeWidth={2 / canvasScale}
+                        listening={false}
+                      />
+                    ))}
+
                   {polygonDraft.length > 0 && (
                     <>
                       <Line points={polygonDraft.flatMap((point) => [point.x, point.y])} stroke="#52b5ff" strokeWidth={2} />
                       {polygonDraft.map((point, index) => (
-                        <Circle key={`${point.x}-${point.y}-${index}`} x={point.x} y={point.y} radius={4} fill="#52b5ff" />
+                        <Circle
+                          key={`${point.x}-${point.y}-${index}`}
+                          x={point.x}
+                          y={point.y}
+                          radius={isPolygonCorrectionMode ? 8 / canvasScale : 4}
+                          fill={isPolygonCorrectionMode ? '#f8fafc' : '#52b5ff'}
+                          stroke={isPolygonCorrectionMode ? '#16a34a' : undefined}
+                          strokeWidth={isPolygonCorrectionMode ? 2 / canvasScale : 0}
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {polygonCorrectionDraft && (
+                    <>
+                      <Line
+                        points={polygonCorrectionDraft.points.flatMap((point) => [point.x, point.y])}
+                        stroke="#f8fafc"
+                        strokeWidth={2}
+                        dash={[6, 6]}
+                      />
+                      {polygonCorrectionDraft.points.map((point, index) => (
+                        <Circle
+                          key={`correction-${point.x}-${point.y}-${index}`}
+                          x={point.x}
+                          y={point.y}
+                          radius={3.5}
+                          fill="#f8fafc"
+                          stroke="#334155"
+                          strokeWidth={1}
+                        />
                       ))}
                     </>
                   )}
@@ -1010,7 +1369,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
               <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-lg bg-[rgba(22,22,22,0.76)] px-4 py-2 text-xs text-white">
                 {activeTool === 'box' && 'Зажмите и протяните, чтобы создать bounding box.'}
-                {activeTool === 'polygon' && 'Кликайте по контуру объекта. Замкните полигон кликом рядом с первой точкой.'}
+                {activeTool === 'polygon' && 'Кликайте по контуру объекта. Для исправления нажмите Shift, кликните первую подсвеченную точку, проведите пунктир и кликните вторую точку. Esc отменяет.'}
                 {activeTool === 'brush' && 'Зажмите мышь и рисуйте по изображению, чтобы дорисовать маску выбранного класса.'}
                 {activeTool === 'eraser' && 'Зажмите мышь и стирайте фрагменты mask-layer выбранного класса.'}
                 {activeTool === 'split' && 'Кликните внутри выбранного bounding box, чтобы разделить его на две части.'}

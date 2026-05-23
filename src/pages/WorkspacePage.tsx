@@ -8,8 +8,7 @@ import WorkspaceCanvas, {
   type Area,
   type CompareViewMode,
   type PolygonPoint,
-  type ToolMode,
-  type WorkspaceNavItem
+  type ToolMode
 } from '../components/WorkspaceCanvas';
 import {
   api,
@@ -36,8 +35,6 @@ interface WorkspaceImage {
   annotations: AnnotationObject[];
 }
 
-type NavKey = 'Projects' | 'Tasks' | 'Jobs' | 'Cloud Storages' | 'Requests' | 'Models';
-
 interface WorkspaceState {
   projectName: string;
   taskName: string;
@@ -53,7 +50,6 @@ interface WorkspaceState {
   compareRightSource: string;
   selectedSegmentationModels: string[];
   selectedDetectionModels: string[];
-  activeNav: NavKey;
 }
 
 const STORAGE_KEY = 'seglabel-ai.workspace';
@@ -125,15 +121,6 @@ const initialClasses: ClassItem[] = [
   { name: 'Tail', source: 'manual', color: '#52b5ff', visible: true },
   { name: 'Ear', source: 'manual', color: '#ffb454', visible: true },
   { name: 'Background', source: 'model', color: '#ff8fb1', visible: false }
-];
-
-const navItems: WorkspaceNavItem[] = [
-  { key: 'Projects', label: 'Projects' },
-  { key: 'Tasks', label: 'Tasks' },
-  { key: 'Jobs', label: 'Jobs' },
-  { key: 'Cloud Storages', label: 'Cloud Storages' },
-  { key: 'Requests', label: 'Requests' },
-  { key: 'Models', label: 'Models' }
 ];
 
 const toolOptions: Array<{ id: ToolMode; label: string }> = [
@@ -246,8 +233,7 @@ const buildInitialState = (): WorkspaceState => ({
   compareLeftSource: 'Imported',
   compareRightSource: 'YOLO World',
   selectedSegmentationModels: ['SAM 2'],
-  selectedDetectionModels: ['YOLO World'],
-  activeNav: 'Projects'
+  selectedDetectionModels: ['YOLO World']
 });
 
 const WorkspacePage = () => {
@@ -1009,14 +995,6 @@ const WorkspacePage = () => {
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
           <section className="min-w-0">
             <WorkspaceCanvas
-              navItems={navItems}
-              activeNav={workspace.activeNav}
-              onNavChange={(nav) =>
-                updateWorkspace((current) => ({ ...current, activeNav: nav }), {
-                  recordHistory: false,
-                  status: `Открыт раздел ${nav}`
-                })
-              }
               activeTool={workspace.activeTool}
               onToolChange={(tool) =>
                 updateWorkspace((current) => ({ ...current, activeTool: tool }), {

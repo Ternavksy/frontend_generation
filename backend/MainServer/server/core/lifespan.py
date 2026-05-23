@@ -69,7 +69,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Управление жизненным циклом приложения.
     Выполняется при старте и остановке сервера.
     """
-    
+
+    await wait_for_db(max_retries=30, delay=2.0)
+
     # Создание таблиц (если не существуют)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
