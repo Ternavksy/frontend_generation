@@ -1030,9 +1030,9 @@ const WorkspacePage = () => {
         className="hidden"
       />
 
-      <div className="mx-auto max-w-[1720px] px-4 pb-8 pt-4">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
-          <section className="min-w-0">
+      <div className="mx-auto max-w-[1720px] px-4 pb-6 pt-4">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+          <section className="min-h-0 min-w-0">
             <WorkspaceCanvas
               activeTool={workspace.activeTool}
               onToolChange={(tool) =>
@@ -1112,7 +1112,8 @@ const WorkspacePage = () => {
             />
           </section>
 
-          <section className="space-y-4">
+          <section className="min-h-0 lg:sticky lg:top-4">
+            <div className="space-y-4">
             {/* <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1366,6 +1367,7 @@ const WorkspacePage = () => {
                 )}
               </div>
             </motion.div>
+            </div>
           </section>
         </div>
       </div>

@@ -1056,7 +1056,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   };
 
   return (
-    <div className="flex h-[calc(100vh-9.5rem)] min-h-[520px] min-w-0 flex-col rounded-[24px] border border-slate-800 bg-slate-900/95 shadow-[0_24px_80px_rgba(15,23,42,0.38)]">
+    <div className="flex h-[clamp(700px,calc(100vh-7rem),880px)] min-w-0 flex-col overflow-hidden rounded-[24px] border border-slate-800 bg-slate-900/95 shadow-[0_24px_80px_rgba(15,23,42,0.38)]">
       {activeTool === 'polygon' && (
         <div className="flex items-center justify-end border-b border-slate-800 bg-slate-950/90 px-5 py-3">
           <button
@@ -1568,52 +1568,54 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
             </div>
           </div>
 
-          <aside className="flex min-h-0 flex-col border-l border-slate-800 bg-slate-900/95">
-            <div className="border-b border-slate-800 bg-slate-950/80 px-4 py-3">
-              <div className="flex items-center justify-between text-sm font-semibold text-slate-100">
-                <span>Objects</span>
-                <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-300">{listedObjects.length}</span>
+          <aside className="flex max-h-full min-h-0 flex-col gap-2 border-l border-slate-800 bg-slate-950/80 p-2">
+            <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
+              <div className="border-b border-slate-800 bg-slate-950/80 px-4 py-3">
+                <div className="flex items-center justify-between text-sm font-semibold text-slate-100">
+                  <span>Objects</span>
+                  <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-300">{listedObjects.length}</span>
+                </div>
               </div>
-            </div>
 
-            <div className="max-h-[160px] overflow-y-auto p-3">
-              {listedObjects.map((object, index) => {
-                const isSelected = selectedObjectId === object.id;
+              <div className="max-h-[160px] overflow-y-auto p-2 custom-scroll">
+                {listedObjects.map((object, index) => {
+                  const isSelected = selectedObjectId === object.id;
 
-                return (
-                  <div
-                    key={object.id}
-                    className={`mb-2 rounded-md border ${
-                      isSelected ? 'border-brand-500/40 bg-brand-500/10' : 'border-slate-800 bg-slate-950'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2 px-3 py-2">
-                      <button type="button" onClick={() => onSelectObject(object.id)} className="min-w-0 flex-1 bg-transparent text-left">
-                        <div className="text-[11px] uppercase tracking-[0.14em] text-slate-500">{index + 1}</div>
-                        <div className="mt-1 text-sm font-medium text-slate-100">{object.label}</div>
-                        <div className="mt-1 text-xs text-slate-400">
-                          {object.source === 'imported' && 'Импорт из аннотаций'}
-                          {object.source === 'model' && `${object.modelName ?? 'Модель'}${object.score ? ` · ${Math.round(object.score * 100)}%` : ''}`}
-                          {object.source === 'manual' && object.type === 'brush' && object.operation === 'paint' && 'Ручная маска'}
-                          {object.source === 'manual' && object.type !== 'brush' && 'Ручная разметка'}
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDeleteObject(object.id)}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-transparent text-slate-400 transition hover:border-rose-500/50 hover:bg-rose-500/10 hover:text-rose-200"
-                        aria-label={`Удалить объект ${index + 1}`}
-                        title="Удалить объект"
-                      >
-                        <Trash2 size={15} aria-hidden="true" />
-                      </button>
+                  return (
+                    <div
+                      key={object.id}
+                      className={`mb-2 rounded-xl border ${
+                        isSelected ? 'border-brand-500/50 bg-brand-500/10' : 'border-slate-700/70 bg-slate-950/85'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2 px-3 py-2.5">
+                        <button type="button" onClick={() => onSelectObject(object.id)} className="min-w-0 flex-1 bg-transparent text-left">
+                          <div className="text-[11px] uppercase tracking-[0.14em] text-slate-500">{index + 1}</div>
+                          <div className="mt-1 text-sm font-medium text-slate-100">{object.label}</div>
+                          <div className="mt-1 text-xs text-slate-400">
+                            {object.source === 'imported' && 'Импорт из аннотаций'}
+                            {object.source === 'model' && `${object.modelName ?? 'Модель'}${object.score ? ` · ${Math.round(object.score * 100)}%` : ''}`}
+                            {object.source === 'manual' && object.type === 'brush' && object.operation === 'paint' && 'Ручная маска'}
+                            {object.source === 'manual' && object.type !== 'brush' && 'Ручная разметка'}
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteObject(object.id)}
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/80 text-slate-400 transition hover:border-rose-500/50 hover:bg-rose-500/10 hover:text-rose-200"
+                          aria-label={`Удалить объект ${index + 1}`}
+                          title="Удалить объект"
+                        >
+                          <Trash2 size={15} aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </section>
 
-            <div className="border-t border-slate-800 bg-slate-950/70 px-4 py-3">
+            <section className="rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
               <div className="text-sm font-semibold text-slate-100">Appearance</div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">
                 <div>
@@ -1670,9 +1672,9 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   className="w-full accent-brand-500"
                 />
               </div>
-            </div>
+            </section>
 
-            <div className="min-h-0 flex-1 overflow-y-auto border-t border-slate-800 px-4 py-3">
+            <section className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)] custom-scroll">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div>
                   <div className="text-sm font-semibold text-slate-100">Классы и инструменты</div>
@@ -1734,7 +1736,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   +
                 </button>
               </div>
-            </div>
+            </section>
           </aside>
         </div>
       </div>

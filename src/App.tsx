@@ -60,7 +60,13 @@ const App = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       {isAuthorized && <TopNav />}
-      <main className="px-4 py-5 xl:px-12">
+      <main
+        className={
+          location.pathname === '/workspace'
+            ? 'min-h-[calc(100vh-60px)] overflow-x-hidden overflow-y-auto px-4 pb-6 pt-4 xl:px-12'
+            : 'min-h-screen px-4 py-5 xl:px-12'
+        }
+      >
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<Navigate to={isAuthorized ? '/dashboard' : '/auth'} replace />} />
