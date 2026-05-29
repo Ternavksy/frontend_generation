@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Trash2, Wand2 } from 'lucide-react';
+import { ChevronDown, Lock, Trash2, Unlock, Wand2 } from 'lucide-react';
 import { Circle, Group, Image as KonvaImage, Layer, Line, Rect, Stage, Text } from 'react-konva';
 
 const FALLBACK_CANVAS_WIDTH = 1200;
@@ -58,6 +58,7 @@ export interface AnnotationObject {
   modelName?: string;
   score?: number;
   opacity?: number;
+  locked?: boolean;
   area?: Area;
   points?: PolygonPoint[];
 }
@@ -364,6 +365,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isShiftPressed, setIsShiftPressed] = useState(false);
+  const [isCtrlPressed, setIsCtrlPressed] = useState(false);
   const [indexInput, setIndexInput] = useState(String(imageIndex + 1));
   const [objectEditPreview, setObjectEditPreview] = useState<ObjectEditPreview | null>(null);
   const polygonCorrectionDraftRef = useRef<PolygonCorrectionDraft | null>(null);
@@ -373,6 +375,8 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   const hasDraggedCanvasRef = useRef(false);
   const isPanningRef = useRef(false);
   const pendingPolygonClickRef = useRef<PolygonPoint | null>(null);
+  const objectMoveIntentRef = useRef<AnnotationObject['id'] | null>(null);
+  const objectMoveDragRef = useRef<AnnotationObject['id'] | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -416,6 +420,8 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     hasDraggedCanvasRef.current = false;
     isPanningRef.current = false;
     pendingPolygonClickRef.current = null;
+    objectMoveIntentRef.current = null;
+    objectMoveDragRef.current = null;
   }, [imageSrc]);
 
   useEffect(() => {
@@ -447,6 +453,12 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   useEffect(() => {
     setObjectEditPreview(null);
   }, [selectedObjectId, activeTool]);
+
+  useEffect(() => {
+    if (activeTool && activeTool !== 'box' && activeTool !== 'polygon') {
+      onToolChange(null);
+    }
+  }, [activeTool, onToolChange]);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -484,6 +496,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
         setIsShiftPressed(true);
       }
 
+      if (event.key === 'Control' || event.key === 'Meta') {
+        setIsCtrlPressed(true);
+      }
+
       if (event.key === 'Escape') {
         updatePolygonCorrectionDraft(null);
       }
@@ -493,10 +509,15 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       if (event.key === 'Shift') {
         setIsShiftPressed(false);
       }
+
+      if (event.key === 'Control' || event.key === 'Meta') {
+        setIsCtrlPressed(false);
+      }
     };
 
     const handleWindowBlur = () => {
       setIsShiftPressed(false);
+      setIsCtrlPressed(false);
     };
 
     const handleWindowMouseUp = () => {
@@ -654,6 +675,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
   const updateCurrentOpacity = (opacity: number) => {
     if (opacityTargetMode === 'object' && selectedObject) {
+      if (selectedObject.locked) {
+        return;
+      }
+
       onObjectOpacityChange(selectedObject.id, opacity);
       return;
     }
@@ -664,6 +689,23 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     }
 
     onMaskOpacityChange(opacity);
+  };
+
+  const updateSelectedObjectClass = (nextLabel: string) => {
+    if (!selectedObject || selectedObject.locked) {
+      return;
+    }
+
+    const nextClass = classList.find((item) => item.name === nextLabel);
+
+    onUpdateObject(selectedObject.id, {
+      label: nextLabel,
+      color: nextClass?.color ?? selectedObject.color
+    });
+  };
+
+  const toggleObjectLock = (object: AnnotationObject) => {
+    onUpdateObject(object.id, { locked: !object.locked });
   };
 
   const appendPolygonDraftPoint = (point: PolygonPoint, minDistance = 0) => {
@@ -704,7 +746,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   const getPolygonCorrectionTarget = (draft = polygonCorrectionDraftRef.current) => {
     if (draft?.target === 'object') {
       const object = visibleObjects.find(
-        (item) => item.id === draft.objectId && item.type === 'polygon' && (item.points?.length ?? 0) >= 3
+        (item) => item.id === draft.objectId && !item.locked && item.type === 'polygon' && (item.points?.length ?? 0) >= 3
       );
 
       if (!object?.points) {
@@ -725,7 +767,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       };
     }
 
-    if (selectedPolygonObject?.points) {
+    if (selectedPolygonObject?.points && !selectedPolygonObject.locked) {
       return {
         target: 'object' as const,
         objectId: selectedPolygonObject.id,
@@ -1035,6 +1077,43 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     event.evt?.stopPropagation?.();
   };
 
+  const isPolygonCorrectionGesture = (event: any) =>
+    activeTool === 'polygon' && (event.evt?.shiftKey || isShiftPressed);
+
+  const rememberObjectMoveIntent = (object: AnnotationObject, event: any) => {
+    objectMoveIntentRef.current =
+      !object.locked && (event.evt?.ctrlKey || event.evt?.metaKey || isCtrlPressed) ? object.id : null;
+  };
+
+  const resetObjectDragPosition = (object: AnnotationObject, event: any) => {
+    if (object.type === 'box' && object.area) {
+      event.target.position({ x: object.area.x, y: object.area.y });
+      return;
+    }
+
+    event.target.position({ x: 0, y: 0 });
+  };
+
+  const startObjectMoveDrag = (object: AnnotationObject, event: any) => {
+    stopObjectPointerEvent(event);
+    onSelectObject(object.id);
+
+    const canMove =
+      !object.locked &&
+      (objectMoveIntentRef.current === object.id || event.evt?.ctrlKey || event.evt?.metaKey || isCtrlPressed);
+
+    if (!canMove) {
+      objectMoveIntentRef.current = null;
+      objectMoveDragRef.current = null;
+      event.target.stopDrag();
+      resetObjectDragPosition(object, event);
+      return;
+    }
+
+    objectMoveIntentRef.current = null;
+    objectMoveDragRef.current = object.id;
+  };
+
   const previewObjectPatch = (id: AnnotationObject['id'], patch: Partial<AnnotationObject>) => {
     setObjectEditPreview({ id, patch });
   };
@@ -1045,7 +1124,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   };
 
   const moveBox = (object: AnnotationObject, event: any) => {
-    if (!object.area) {
+    if (!object.area || object.locked || objectMoveDragRef.current !== object.id) {
+      resetObjectDragPosition(object, event);
+      objectMoveIntentRef.current = null;
+      objectMoveDragRef.current = null;
       return;
     }
 
@@ -1059,11 +1141,13 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     );
 
     event.target.position({ x: nextArea.x, y: nextArea.y });
+    objectMoveIntentRef.current = null;
+    objectMoveDragRef.current = null;
     commitObjectPatch(object.id, { area: nextArea });
   };
 
   const resizeBox = (object: AnnotationObject, handle: BoxResizeHandle, event: any, shouldCommit: boolean) => {
-    if (!object.area) {
+    if (!object.area || object.locked) {
       return;
     }
 
@@ -1084,7 +1168,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   };
 
   const movePolygon = (object: AnnotationObject, event: any) => {
-    if (!object.points?.length) {
+    if (!object.points?.length || object.locked || objectMoveDragRef.current !== object.id) {
+      resetObjectDragPosition(object, event);
+      objectMoveIntentRef.current = null;
+      objectMoveDragRef.current = null;
       return;
     }
 
@@ -1097,6 +1184,8 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     }));
 
     event.target.position({ x: 0, y: 0 });
+    objectMoveIntentRef.current = null;
+    objectMoveDragRef.current = null;
     commitObjectPatch(object.id, {
       points: nextPoints,
       area: getPolygonBounds(nextPoints)
@@ -1104,7 +1193,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   };
 
   const movePolygonPoint = (object: AnnotationObject, pointIndex: number, event: any, shouldCommit: boolean) => {
-    if (!object.points?.[pointIndex]) {
+    if (!object.points?.[pointIndex] || object.locked) {
       return;
     }
 
@@ -1173,18 +1262,26 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
             return (
               <Group
                 key={object.id}
-                draggable={activeTool === 'select'}
+                draggable={!object.locked && !isPolygonCorrectionMode}
                 onMouseDown={(event) => {
+                  if (isPolygonCorrectionGesture(event)) {
+                    return;
+                  }
+
+                  rememberObjectMoveIntent(object, event);
                   stopObjectPointerEvent(event);
                   onSelectObject(object.id);
                 }}
                 onClick={(event) => {
+                  if (isPolygonCorrectionGesture(event)) {
+                    return;
+                  }
+
                   stopObjectPointerEvent(event);
                   onSelectObject(object.id);
                 }}
                 onDragStart={(event) => {
-                  stopObjectPointerEvent(event);
-                  onSelectObject(object.id);
+                  startObjectMoveDrag(object, event);
                 }}
                 onDragEnd={(event) => movePolygon(object, event)}
               >
@@ -1213,6 +1310,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
               <Group
                 key={object.id}
                 onMouseDown={(event) => {
+                  rememberObjectMoveIntent(object, event);
                   stopObjectPointerEvent(event);
                   onSelectObject(object.id);
                 }}
@@ -1276,7 +1374,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 fill={fill}
                 opacity={getObjectOpacity(object)}
                 dash={isSelected ? [8, 4] : undefined}
-                draggable={activeTool === 'select'}
+                draggable={!object.locked}
                 onMouseDown={(event) => {
                   stopObjectPointerEvent(event);
                   onSelectObject(object.id);
@@ -1286,8 +1384,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   onSelectObject(object.id);
                 }}
                 onDragStart={(event) => {
-                  stopObjectPointerEvent(event);
-                  onSelectObject(object.id);
+                  startObjectMoveDrag(object, event);
                 }}
                 onDragEnd={(event) => {
                   moveBox(object, event);
@@ -1443,14 +1540,8 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
         <div className="border-r border-slate-800 bg-slate-950/95 py-4">
           <div className="flex flex-col items-center gap-3">
             {[
-              { id: 'select' as ToolMode, icon: '✥', label: 'Выбор', hint: 'Выбор и перемещение уже созданных объектов.' },
               { id: 'box' as ToolMode, icon: '▭', label: 'Box', hint: 'Создание прямоугольной области на изображении.' },
-              { id: 'polygon' as ToolMode, icon: '⬠', label: 'Polygon', hint: 'Клики ставят точки. Shift подсвечивает точки; клик-точка, ведение, клик-точка заменяет участок.' },
-              { id: 'brush' as ToolMode, icon: '🖌', label: 'Кисть', hint: 'Ручная дорисовка маски выбранного класса.' },
-              { id: 'eraser' as ToolMode, icon: '⌫', label: 'Ластик', hint: 'Частичное стирание маски выбранного класса.' },
-              { id: 'split' as ToolMode, icon: '✂', label: 'Разделение', hint: 'Разделение выбранного bounding box на две части.' },
-              { id: 'zoom' as ToolMode, icon: '⌕', label: 'Zoom', hint: 'Приближение и отдаление рабочей области.' },
-              { id: 'move' as ToolMode, icon: '✋', label: 'Move', hint: 'Перемещение холста внутри рабочей области.' }
+              { id: 'polygon' as ToolMode, icon: '⬠', label: 'Polygon', hint: 'Клики ставят точки. Shift подсвечивает точки; клик-точка, ведение, клик-точка заменяет участок.' }
             ].map((tool) => {
               const isActive = activeTool === tool.id;
 
@@ -1488,9 +1579,15 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
               <Stage
                 width={stageWidth}
                 height={stageHeight}
+                onContextMenu={(event) => event.evt.preventDefault()}
                 onMouseDown={(event) => {
                   if (event.evt.button === 0) {
                     leftButtonDownRef.current = true;
+                  }
+
+                  if (event.evt.ctrlKey || event.evt.metaKey || event.evt.button !== 0) {
+                    startCanvasPan(event);
+                    return;
                   }
 
                   if (activeTool === 'box') {
@@ -1514,39 +1611,6 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     return;
                   }
 
-                  if (activeTool === 'brush') {
-                    startBrush(event);
-                    return;
-                  }
-
-                  if (activeTool === 'eraser') {
-                    startBrush(event);
-                    return;
-                  }
-
-                  if (activeTool === 'split') {
-                    splitAtPoint(event);
-                    return;
-                  }
-
-                  if (activeTool === 'zoom') {
-                    startCanvasPan(event, false);
-                    return;
-                  }
-
-                  if (activeTool === 'move') {
-                    startCanvasPan(event);
-                    return;
-                  }
-
-                  if (activeTool === 'select') {
-                    onSelectObject(null);
-                    if (event.target === event.target.getStage()) {
-                      startCanvasPan(event, false);
-                    }
-                    return;
-                  }
-
                   if (!activeTool) {
                     startCanvasPan(event);
                   }
@@ -1565,24 +1629,13 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     return;
                   }
 
-                  if ((activeTool === 'select' || activeTool === 'move' || activeTool === 'zoom' || !activeTool) && panStartRef.current) {
+                  if (panStartRef.current) {
                     updateCanvasPan(event);
                     return;
                   }
 
                   if (activeTool === 'box') {
                     updateBox(event);
-                    return;
-                  }
-
-                  if (activeTool === 'brush') {
-                    updateBrush(event);
-                    return;
-                  }
-
-                  if (activeTool === 'eraser') {
-                    updateBrush(event);
-                    return;
                   }
                 }}
                 onMouseUp={(event) => {
@@ -1609,53 +1662,19 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     }
                   }
 
-                  if (activeTool === 'zoom') {
-                    const pointer = getStagePointer(event);
-
-                    if (pointer && !hasDraggedCanvasRef.current) {
-                      zoomAtPointer(pointer.x, pointer.y, 1);
-                    }
-
-                    stopCanvasPan();
-                  }
-
-                  if (activeTool === 'select' || activeTool === 'move' || !activeTool) {
-                    stopCanvasPan();
-                  }
-
                   if (activeTool === 'box') {
                     finishBox();
                   }
 
-                  if (activeTool === 'brush') {
-                    finishBrush('paint');
-                  }
-
-                  if (activeTool === 'eraser') {
-                    finishBrush('erase');
-                  }
-
-                  if (activeTool !== 'polygon' && activeTool !== 'zoom' && activeTool !== 'move' && activeTool !== 'select' && activeTool) {
-                    stopCanvasPan();
-                  }
+                  stopCanvasPan();
                 }}
                 onWheel={(event) => {
-                  const shouldZoom = activeTool === 'zoom' || event.evt.buttons === 1 || leftButtonDownRef.current;
-
-                  if (!shouldZoom) {
-                    return;
-                  }
-
                   event.evt.preventDefault();
 
                   const pointer = event.target.getStage()?.getPointerPosition();
 
                   if (!pointer) {
                     return;
-                  }
-
-                  if (event.evt.buttons === 1 || leftButtonDownRef.current) {
-                    hasDraggedCanvasRef.current = true;
                   }
 
                   zoomAtPointer(pointer.x, pointer.y, event.evt.deltaY < 0 ? 1 : -1);
@@ -1723,7 +1742,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 </Layer>
 
                 <Layer x={offset.x} y={offset.y} scaleX={canvasScale} scaleY={canvasScale}>
-                  {activeTool === 'select' && selectedObject?.type === 'box' && selectedObject.area && (
+                  {selectedObject?.type === 'box' && !selectedObject.locked && selectedObject.area && (
                     <>
                       {getBoxResizeHandles(selectedObject.area).map((handle) => (
                         <Rect
@@ -1748,8 +1767,9 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     </>
                   )}
 
-                  {activeTool === 'select' &&
-                    selectedObject?.type === 'polygon' &&
+                  {selectedObject?.type === 'polygon' &&
+                    !selectedObject.locked &&
+                    !isPolygonCorrectionMode &&
                     selectedObject.points?.map((point, index) => (
                       <Circle
                         key={`${selectedObject.id}-point-${index}`}
@@ -1785,6 +1805,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
                   {selectedPolygonObject?.points &&
                     activeTool === 'polygon' &&
+                    !selectedPolygonObject.locked &&
                     polygonDraft.length === 0 &&
                     (isShiftPressed ||
                       (polygonCorrectionDraft?.target === 'object' &&
@@ -1794,10 +1815,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                         key={`${selectedPolygonObject.id}-handle-${index}`}
                         x={point.x}
                         y={point.y}
-                        radius={8 / canvasScale}
-                        fill="#f8fafc"
-                        stroke="#16a34a"
-                        strokeWidth={2 / canvasScale}
+                        radius={9 / canvasScale}
+                        fill="#7CFC8A"
+                        stroke="#14532d"
+                        strokeWidth={2.5 / canvasScale}
                         listening={false}
                       />
                     ))}
@@ -1810,10 +1831,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                           key={`${point.x}-${point.y}-${index}`}
                           x={point.x}
                           y={point.y}
-                          radius={isPolygonCorrectionMode ? 8 / canvasScale : 4}
-                          fill={isPolygonCorrectionMode ? '#f8fafc' : '#52b5ff'}
-                          stroke={isPolygonCorrectionMode ? '#16a34a' : undefined}
-                          strokeWidth={isPolygonCorrectionMode ? 2 / canvasScale : 0}
+                          radius={isPolygonCorrectionMode ? 9 / canvasScale : 4}
+                          fill={isPolygonCorrectionMode ? '#7CFC8A' : '#52b5ff'}
+                          stroke={isPolygonCorrectionMode ? '#14532d' : undefined}
+                          strokeWidth={isPolygonCorrectionMode ? 2.5 / canvasScale : 0}
                         />
                       ))}
                     </>
@@ -1841,38 +1862,22 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     </>
                   )}
 
-                  {brushDraft.length > 0 && (
-                    <Line
-                      points={brushDraft.flatMap((point) => [point.x, point.y])}
-                      stroke={activeTool === 'eraser' ? '#fca5a5' : '#7CFC8A'}
-                      strokeWidth={activeTool === 'eraser' ? 24 : 16}
-                      lineCap="round"
-                      lineJoin="round"
-                      opacity={activeTool === 'eraser' ? 0.45 : maskOpacity}
-                      tension={0.25}
-                    />
-                  )}
                 </Layer>
               </Stage>
 
               <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-lg bg-[rgba(22,22,22,0.76)] px-4 py-2 text-xs text-white">
-                {activeTool === 'box' && 'Зажмите и протяните, чтобы создать bounding box.'}
-                {activeTool === 'polygon' && 'Кликайте по контуру объекта. Для исправления нажмите Shift, кликните первую подсвеченную точку, проведите пунктир и кликните вторую точку. Esc отменяет.'}
-                {activeTool === 'brush' && 'Зажмите мышь и рисуйте по изображению, чтобы дорисовать маску выбранного класса.'}
-                {activeTool === 'eraser' && 'Зажмите мышь и стирайте фрагменты mask-layer выбранного класса.'}
-                {activeTool === 'split' && 'Кликните внутри выбранного bounding box, чтобы разделить его на две части.'}
-                {activeTool === 'select' && 'Выберите объект на изображении и перетащите его при необходимости.'}
-                {activeTool === 'zoom' && 'Кликайте по холсту или используйте колесо мыши для zoom.'}
-                {activeTool === 'move' && 'Зажмите мышь и перемещайте холст.'}
+                {activeTool === 'box' && 'Протяните мышью, чтобы создать прямоугольник. Колесо меняет масштаб. Ctrl/Cmd + протяжка по объекту перемещает его.'}
+                {activeTool === 'polygon' && 'Кликайте по контуру объекта. Shift исправляет точки. Колесо меняет масштаб. Ctrl/Cmd + протяжка по объекту перемещает его.'}
+                {!activeTool && 'Колесо мыши меняет масштаб. Перетяните пустую область, чтобы сдвинуть изображение. Ctrl/Cmd + протяжка по объекту перемещает его.'}
               </div>
             </div>
           </div>
 
-          <aside className="flex max-h-full min-h-0 flex-col gap-2 border-l border-slate-800 bg-slate-950/80 p-2">
-            <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
+          <aside className="flex max-h-full min-h-0 flex-col gap-2 overflow-y-auto border-l border-slate-800 bg-slate-950/80 p-2 custom-scroll">
+            <section className="shrink-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
               <div className="border-b border-slate-800 bg-slate-950/80 px-4 py-3">
                 <div className="flex items-center justify-between text-sm font-semibold text-slate-100">
-                  <span>Objects</span>
+                  <span>Список объектов</span>
                   <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-300">{listedObjects.length}</span>
                 </div>
               </div>
@@ -1880,6 +1885,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
               <div className="max-h-[160px] overflow-y-auto p-2 custom-scroll">
                 {listedObjects.map((object, index) => {
                   const isSelected = selectedObjectId === object.id;
+                  const isLocked = Boolean(object.locked);
 
                   return (
                     <div
@@ -1890,14 +1896,30 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     >
                       <div className="flex items-start gap-2 px-3 py-2.5">
                         <button type="button" onClick={() => onSelectObject(object.id)} className="min-w-0 flex-1 bg-transparent text-left">
-                          <div className="text-[11px] uppercase tracking-[0.14em] text-slate-500">{index + 1}</div>
-                          <div className="mt-1 text-sm font-medium text-slate-100">{object.label}</div>
-                          <div className="mt-1 text-xs text-slate-400">
+                          <div className="flex items-center gap-2">
+                            <span className="shrink-0 text-[11px] uppercase tracking-[0.14em] text-slate-500">{index + 1}</span>
+                            <span className="truncate text-sm font-medium text-slate-100">{object.label}</span>
+                          </div>
+                          <div className="mt-1 truncate text-xs text-slate-400">
+                            {isLocked && 'Заблокирован · '}
                             {object.source === 'imported' && 'Импорт из аннотаций'}
                             {object.source === 'model' && `${object.modelName ?? 'Модель'}${object.score ? ` · ${Math.round(object.score * 100)}%` : ''}`}
                             {object.source === 'manual' && object.type === 'brush' && object.operation === 'paint' && 'Ручная маска'}
                             {object.source === 'manual' && object.type !== 'brush' && 'Ручная разметка'}
                           </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleObjectLock(object)}
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition ${
+                            isLocked
+                              ? 'border-amber-400/40 bg-amber-400/10 text-amber-200 hover:border-amber-300/60 hover:bg-amber-400/15'
+                              : 'border-slate-700 bg-slate-900/80 text-slate-400 hover:border-brand-500/50 hover:bg-brand-500/10 hover:text-brand-100'
+                          }`}
+                          aria-label={isLocked ? `Разблокировать объект ${index + 1}` : `Заблокировать объект ${index + 1}`}
+                          title={isLocked ? 'Разблокировать объект' : 'Заблокировать объект'}
+                        >
+                          {isLocked ? <Lock size={15} aria-hidden="true" /> : <Unlock size={15} aria-hidden="true" />}
                         </button>
                         <button
                           type="button"
@@ -1915,17 +1937,35 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
               </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
-              <div className="text-sm font-semibold text-slate-100">Appearance</div>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-400">
-                <div>
-                  Класс: <span className="font-semibold text-slate-100">{activeLabel}</span>
+            <section className="shrink-0 rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
+              <div className="text-sm font-semibold text-slate-100">Настройки</div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-400">
+                <div className="truncate">
+                  Активный класс: <span className="font-semibold text-slate-100">{activeLabel}</span>
                 </div>
-                <div>
-                  Zoom: <span className="font-semibold text-slate-100">{zoom.toFixed(2)}x</span>
+                <div className="truncate">
+                  Масштаб: <span className="font-semibold text-slate-100">{zoom.toFixed(2)}x</span>
                 </div>
               </div>
-              <div className="mt-3 flex rounded-xl border border-slate-800 bg-slate-950 p-1">
+              <label className="mt-2 block text-xs text-slate-400">
+                Класс объекта
+                <select
+                  value={selectedObject?.label ?? ''}
+                  onChange={(event) => updateSelectedObjectClass(event.target.value)}
+                  disabled={!selectedObject || selectedObject.locked}
+                  className="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="" disabled>
+                    Выберите объект
+                  </option>
+                  {classList.map((item) => (
+                    <option key={item.name} value={item.name}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="mt-2 flex rounded-xl border border-slate-800 bg-slate-950 p-1">
                 {(['class', 'object'] as const).map((mode) => (
                   <button
                     key={mode}
@@ -1943,7 +1983,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 <select
                   value={selectedOpacityClass?.name ?? ''}
                   onChange={(event) => onOpacityClassNameChange(event.target.value)}
-                  className="mt-3 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100"
+                  className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100"
                 >
                   {classList.map((item) => (
                     <option key={item.name} value={item.name}>
@@ -1953,13 +1993,13 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 </select>
               )}
               {opacityTargetMode === 'object' && (
-                <div className="mt-3 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300">
-                  {selectedObject ? `Объект: ${selectedObject.label}` : 'Выберите объект'}
+                <div className="mt-2 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-300">
+                  {selectedObject ? `Объект: ${selectedObject.label}${selectedObject.locked ? ' · заблокирован' : ''}` : 'Выберите объект'}
                 </div>
               )}
-              <div className="mt-3">
+              <div className="mt-2">
                 <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
-                  <span>Opacity</span>
+                  <span>Прозрачность</span>
                   <span className="text-slate-300">{Math.round(currentOpacity * 100)}%</span>
                 </div>
                 <input
@@ -1968,13 +2008,13 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   max="100"
                   value={Math.round(currentOpacity * 100)}
                   onChange={(event) => updateCurrentOpacity(Number(event.target.value) / 100)}
-                  disabled={opacityTargetMode === 'object' && !selectedObject}
-                  className="w-full accent-brand-500"
+                  disabled={opacityTargetMode === 'object' && (!selectedObject || selectedObject.locked)}
+                  className="w-full accent-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
             </section>
 
-            <section className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)] custom-scroll">
+            <section className="shrink-0 rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div>
                   <div className="text-sm font-semibold text-slate-100">Классы</div>
@@ -1982,7 +2022,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 </div>
               </div>
 
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 max-h-[220px] space-y-2 overflow-y-auto pr-1 custom-scroll">
                 {classList.map((item) => (
                   <div
                     key={item.name}

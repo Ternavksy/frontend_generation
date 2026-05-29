@@ -590,3 +590,20 @@ passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passl
 2026-05-29 09:36:33,591 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
 2026-05-29 09:36:33,592 - hpack.hpack - DEBUG - Decoded (b'vary', b'Accept-Encoding'), total consumed 13 bytes, indexed True
 2026-05-29 09:36:33,595 - httpx._client - DEBUG - HTTP Request: GET https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=%D0%92%D0%B0%D1%83 "HTTP/2 200 OK"
+2026-05-29 10:11:05,976 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 10:11:06,007 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 10:20:49,762 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:42:32,049 - passlib.handlers.bcrypt - DEBUG - trapped unexpected response from 'os_crypt' backend: verify('test', b'$2$04$5BJqKfqMQvV7nS.yUguNcuRfMMOXK0xPWavM7pOzjEi5ze5T1k8/S'):
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 303, in safe_verify
+    return verify(secret, hash)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 837, in _calc_checksum
+    raise uh.exc.InternalBackendError(
+passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passlib recommends running `pip install bcrypt` for general bcrypt support.(config=<hash <class 'str'> value omitted>, secret=<hash <class 'bytes'> value omitted>)
+2026-05-29 14:42:32,055 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
+2026-05-29 14:42:35,286 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:42:35,337 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8

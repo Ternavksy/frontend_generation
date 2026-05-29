@@ -194,6 +194,8 @@ const annotationFromApi = (annotation: AnnotationResponse): AnnotationObject => 
     operation: objectData.operation,
     modelName: objectData.modelName,
     score: objectData.score,
+    opacity: objectData.opacity,
+    locked: objectData.locked,
     area: objectData.area,
     points: objectData.points
   };
