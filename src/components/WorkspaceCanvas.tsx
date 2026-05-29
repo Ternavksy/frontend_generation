@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { ChevronDown, Trash2, Wand2 } from 'lucide-react';
 import { Circle, Group, Image as KonvaImage, Layer, Line, Rect, Stage, Text } from 'react-konva';
 
 const FALLBACK_CANVAS_WIDTH = 1200;
@@ -10,6 +10,8 @@ const MAX_CANVAS_ZOOM = 8;
 const CANVAS_ZOOM_STEP = 1.25;
 const POLYGON_CORRECTION_MIN_SCREEN_DISTANCE = 4;
 const POLYGON_CORRECTION_HIT_SCREEN_DISTANCE = 34;
+const MIN_BOX_SIZE = 8;
+const RESIZE_HANDLE_SIZE = 10;
 
 export type ToolMode = 'select' | 'box' | 'polygon' | 'zoom' | 'move' | 'brush' | 'eraser' | 'split';
 export type ActiveToolMode = ToolMode | null;
@@ -39,6 +41,13 @@ interface PolygonDraftHit {
   distance: number;
 }
 
+type BoxResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
+
+interface ObjectEditPreview {
+  id: AnnotationObject['id'];
+  patch: Partial<AnnotationObject>;
+}
+
 export interface AnnotationObject {
   id: number | string;
   label: string;
@@ -64,6 +73,12 @@ export interface WorkspaceClassItem {
   opacity?: number;
 }
 
+export interface WorkspaceModelItem {
+  id: number;
+  name: string;
+  type: string;
+}
+
 interface WorkspaceCanvasProps {
   activeTool: ActiveToolMode;
   onToolChange: (tool: ActiveToolMode) => void;
@@ -80,7 +95,6 @@ interface WorkspaceCanvasProps {
   compareLeftSource: string;
   compareRightSource: string;
   classList: WorkspaceClassItem[];
-  toolOptions: Array<{ id: ToolMode; label: string }>;
   newClassName: string;
   imageName: string;
   imageSrc: string;
@@ -94,6 +108,12 @@ interface WorkspaceCanvasProps {
   selectedObjectId: AnnotationObject['id'] | null;
   objects: AnnotationObject[];
   hiddenLabels: string[];
+  segmentationModels: WorkspaceModelItem[];
+  detectionModels: WorkspaceModelItem[];
+  selectedSegmentationModels: string[];
+  selectedDetectionModels: string[];
+  analysisClassNames: string[];
+  isRunningModels: boolean;
   onToggleMenu: () => void;
   onCloseMenu: () => void;
   onSave: () => void;
@@ -112,6 +132,9 @@ interface WorkspaceCanvasProps {
   onDeleteObject: (id: AnnotationObject['id']) => void;
   onSelectClass: (name: string) => void;
   onToggleClassVisibility: (name: string) => void;
+  onToggleAnalysisClass: (name: string) => void;
+  onToggleModel: (model: string, kind: 'segmentation' | 'detection') => void;
+  onRunModels: () => void;
   onNewClassNameChange: (name: string) => void;
   onAddClass: () => void;
   onCreateObject: (object: Omit<AnnotationObject, 'id'>) => void;
@@ -130,6 +153,66 @@ const getPolygonBounds = (points: PolygonPoint[]): Area => {
     y: Math.min(...ys),
     width: Math.max(...xs) - Math.min(...xs),
     height: Math.max(...ys) - Math.min(...ys)
+  };
+};
+
+const clampAreaToImage = (area: Area, imageSize: Pick<Area, 'width' | 'height'>): Area => {
+  const width = clamp(area.width, MIN_BOX_SIZE, imageSize.width);
+  const height = clamp(area.height, MIN_BOX_SIZE, imageSize.height);
+  const x = clamp(area.x, 0, imageSize.width - width);
+  const y = clamp(area.y, 0, imageSize.height - height);
+
+  return { x, y, width, height };
+};
+
+const getBoxResizeHandles = (area: Area): Array<{ id: BoxResizeHandle; x: number; y: number }> => [
+  { id: 'nw', x: area.x, y: area.y },
+  { id: 'n', x: area.x + area.width / 2, y: area.y },
+  { id: 'ne', x: area.x + area.width, y: area.y },
+  { id: 'e', x: area.x + area.width, y: area.y + area.height / 2 },
+  { id: 'se', x: area.x + area.width, y: area.y + area.height },
+  { id: 's', x: area.x + area.width / 2, y: area.y + area.height },
+  { id: 'sw', x: area.x, y: area.y + area.height },
+  { id: 'w', x: area.x, y: area.y + area.height / 2 }
+];
+
+const resizeBoxArea = (area: Area, handle: BoxResizeHandle, point: PolygonPoint, imageSize: Pick<Area, 'width' | 'height'>): Area => {
+  let left = area.x;
+  let right = area.x + area.width;
+  let top = area.y;
+  let bottom = area.y + area.height;
+
+  if (handle.includes('w')) {
+    left = clamp(point.x, 0, right - MIN_BOX_SIZE);
+  }
+
+  if (handle.includes('e')) {
+    right = clamp(point.x, left + MIN_BOX_SIZE, imageSize.width);
+  }
+
+  if (handle.includes('n')) {
+    top = clamp(point.y, 0, bottom - MIN_BOX_SIZE);
+  }
+
+  if (handle.includes('s')) {
+    bottom = clamp(point.y, top + MIN_BOX_SIZE, imageSize.height);
+  }
+
+  if (handle === 'n' || handle === 's') {
+    left = area.x;
+    right = area.x + area.width;
+  }
+
+  if (handle === 'e' || handle === 'w') {
+    top = area.y;
+    bottom = area.y + area.height;
+  }
+
+  return {
+    x: Math.round(left),
+    y: Math.round(top),
+    width: Math.round(right - left),
+    height: Math.round(bottom - top)
   };
 };
 
@@ -187,6 +270,21 @@ const getObjectSourceKey = (object: AnnotationObject) => {
   return 'Manual';
 };
 
+const getClassCountLabel = (count: number) => {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+
+  if (mod10 === 1 && mod100 !== 11) {
+    return `${count} класс`;
+  }
+
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return `${count} класса`;
+  }
+
+  return `${count} классов`;
+};
+
 const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   activeTool,
   onToolChange,
@@ -203,7 +301,6 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   compareLeftSource,
   compareRightSource,
   classList,
-  toolOptions,
   newClassName,
   imageName,
   imageSrc,
@@ -217,6 +314,12 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   selectedObjectId,
   objects,
   hiddenLabels,
+  segmentationModels,
+  detectionModels,
+  selectedSegmentationModels,
+  selectedDetectionModels,
+  analysisClassNames,
+  isRunningModels,
   onToggleMenu,
   onCloseMenu,
   onSave,
@@ -235,6 +338,9 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   onDeleteObject,
   onSelectClass,
   onToggleClassVisibility,
+  onToggleAnalysisClass,
+  onToggleModel,
+  onRunModels,
   onNewClassNameChange,
   onAddClass,
   onCreateObject,
@@ -259,6 +365,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isShiftPressed, setIsShiftPressed] = useState(false);
   const [indexInput, setIndexInput] = useState(String(imageIndex + 1));
+  const [objectEditPreview, setObjectEditPreview] = useState<ObjectEditPreview | null>(null);
   const polygonCorrectionDraftRef = useRef<PolygonCorrectionDraft | null>(null);
   const leftButtonDownRef = useRef(false);
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -301,6 +408,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     setBrushDraft([]);
     setDraftBox(null);
     setDrawingStart(null);
+    setObjectEditPreview(null);
     polygonCorrectionDraftRef.current = null;
     leftButtonDownRef.current = false;
     panStartRef.current = null;
@@ -335,6 +443,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   useEffect(() => {
     setIndexInput(String(imageIndex + 1));
   }, [imageIndex]);
+
+  useEffect(() => {
+    setObjectEditPreview(null);
+  }, [selectedObjectId, activeTool]);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -417,9 +529,16 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     () => objects.filter((item) => !hiddenLabels.includes(item.label)),
     [objects, hiddenLabels]
   );
+  const previewVisibleObjects = useMemo(
+    () =>
+      visibleObjects.map((item) =>
+        objectEditPreview?.id === item.id ? { ...item, ...objectEditPreview.patch } : item
+      ),
+    [objectEditPreview, visibleObjects]
+  );
   const selectedObject = useMemo(
-    () => visibleObjects.find((item) => item.id === selectedObjectId) ?? null,
-    [selectedObjectId, visibleObjects]
+    () => previewVisibleObjects.find((item) => item.id === selectedObjectId) ?? null,
+    [selectedObjectId, previewVisibleObjects]
   );
   const selectedPolygonObject = useMemo(
     () =>
@@ -428,11 +547,11 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   );
   const isPolygonCorrectionMode = activeTool === 'polygon' && (isShiftPressed || Boolean(polygonCorrectionDraft));
   const listedObjects = useMemo(
-    () => visibleObjects.filter((item) => !(item.type === 'brush' && item.operation === 'erase')),
-    [visibleObjects]
+    () => previewVisibleObjects.filter((item) => !(item.type === 'brush' && item.operation === 'erase')),
+    [previewVisibleObjects]
   );
   const getObjectsForSource = (sourceKey: string) =>
-    visibleObjects.filter((item) => getObjectSourceKey(item) === sourceKey);
+    previewVisibleObjects.filter((item) => getObjectSourceKey(item) === sourceKey);
   const selectedOpacityClass = classList.find((item) => item.name === opacityClassName) ?? classList[0] ?? null;
   const currentOpacity =
     opacityTargetMode === 'object' && selectedObject
@@ -442,12 +561,12 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     object.opacity ?? classList.find((item) => item.name === object.label)?.opacity ?? maskOpacity;
 
   const comparisonLeftObjects = useMemo(
-    () => (compareViewMode === 'split' ? getObjectsForSource(compareLeftSource) : visibleObjects),
-    [compareViewMode, compareLeftSource, visibleObjects]
+    () => (compareViewMode === 'split' ? getObjectsForSource(compareLeftSource) : previewVisibleObjects),
+    [compareViewMode, compareLeftSource, previewVisibleObjects]
   );
   const comparisonRightObjects = useMemo(
     () => getObjectsForSource(compareRightSource),
-    [compareRightSource, visibleObjects]
+    [compareRightSource, previewVisibleObjects]
   );
 
   const getPointer = (event: any): PolygonPoint | null => {
@@ -911,6 +1030,111 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     }
   };
 
+  const stopObjectPointerEvent = (event: any) => {
+    event.cancelBubble = true;
+    event.evt?.stopPropagation?.();
+  };
+
+  const previewObjectPatch = (id: AnnotationObject['id'], patch: Partial<AnnotationObject>) => {
+    setObjectEditPreview({ id, patch });
+  };
+
+  const commitObjectPatch = (id: AnnotationObject['id'], patch: Partial<AnnotationObject>) => {
+    setObjectEditPreview(null);
+    onUpdateObject(id, patch);
+  };
+
+  const moveBox = (object: AnnotationObject, event: any) => {
+    if (!object.area) {
+      return;
+    }
+
+    const nextArea = clampAreaToImage(
+      {
+        ...object.area,
+        x: Math.round(event.target.x()),
+        y: Math.round(event.target.y())
+      },
+      imageSize
+    );
+
+    event.target.position({ x: nextArea.x, y: nextArea.y });
+    commitObjectPatch(object.id, { area: nextArea });
+  };
+
+  const resizeBox = (object: AnnotationObject, handle: BoxResizeHandle, event: any, shouldCommit: boolean) => {
+    if (!object.area) {
+      return;
+    }
+
+    const pointer = getPointer(event);
+
+    if (!pointer) {
+      return;
+    }
+
+    const nextArea = resizeBoxArea(object.area, handle, pointer, imageSize);
+
+    if (shouldCommit) {
+      commitObjectPatch(object.id, { area: nextArea });
+      return;
+    }
+
+    previewObjectPatch(object.id, { area: nextArea });
+  };
+
+  const movePolygon = (object: AnnotationObject, event: any) => {
+    if (!object.points?.length) {
+      return;
+    }
+
+    const bounds = getPolygonBounds(object.points);
+    const dx = clamp(event.target.x(), -bounds.x, imageSize.width - (bounds.x + bounds.width));
+    const dy = clamp(event.target.y(), -bounds.y, imageSize.height - (bounds.y + bounds.height));
+    const nextPoints = object.points.map((point) => ({
+      x: Math.round(point.x + dx),
+      y: Math.round(point.y + dy)
+    }));
+
+    event.target.position({ x: 0, y: 0 });
+    commitObjectPatch(object.id, {
+      points: nextPoints,
+      area: getPolygonBounds(nextPoints)
+    });
+  };
+
+  const movePolygonPoint = (object: AnnotationObject, pointIndex: number, event: any, shouldCommit: boolean) => {
+    if (!object.points?.[pointIndex]) {
+      return;
+    }
+
+    const pointer = getPointer(event);
+
+    if (!pointer) {
+      return;
+    }
+
+    const nextPoints = object.points.map((point, index) =>
+      index === pointIndex
+        ? {
+            x: Math.round(pointer.x),
+            y: Math.round(pointer.y)
+          }
+        : point
+    );
+    const patch = {
+      points: nextPoints,
+      area: getPolygonBounds(nextPoints)
+    };
+
+    if (shouldCommit) {
+      commitObjectPatch(object.id, patch);
+      return;
+    }
+
+    previewObjectPatch(object.id, patch);
+  };
+
   const renderMaskAnnotations = (items: AnnotationObject[]) => {
     const localMaskObjects = items.filter((item) => item.type === 'polygon' || item.type === 'brush');
     const paintMaskObjects = localMaskObjects.filter(
@@ -947,7 +1171,23 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
           if (object.type === 'polygon') {
             return (
-              <Group key={object.id}>
+              <Group
+                key={object.id}
+                draggable={activeTool === 'select'}
+                onMouseDown={(event) => {
+                  stopObjectPointerEvent(event);
+                  onSelectObject(object.id);
+                }}
+                onClick={(event) => {
+                  stopObjectPointerEvent(event);
+                  onSelectObject(object.id);
+                }}
+                onDragStart={(event) => {
+                  stopObjectPointerEvent(event);
+                  onSelectObject(object.id);
+                }}
+                onDragEnd={(event) => movePolygon(object, event)}
+              >
                 <Line
                   points={object.points.flatMap((point) => [point.x, point.y])}
                   closed
@@ -955,7 +1195,6 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   strokeWidth={isSelected ? 3 : 2}
                   fill={fill}
                   opacity={getObjectOpacity(object)}
-                  onClick={() => onSelectObject(object.id)}
                 />
                 <Text
                   x={object.points[0]?.x ?? 0}
@@ -971,7 +1210,17 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
           if (object.type === 'brush') {
             return (
-              <Group key={object.id}>
+              <Group
+                key={object.id}
+                onMouseDown={(event) => {
+                  stopObjectPointerEvent(event);
+                  onSelectObject(object.id);
+                }}
+                onClick={(event) => {
+                  stopObjectPointerEvent(event);
+                  onSelectObject(object.id);
+                }}
+              >
                 <Line
                   points={object.points.flatMap((point) => [point.x, point.y])}
                   stroke={stroke}
@@ -981,7 +1230,6 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   opacity={getObjectOpacity(object)}
                   tension={0.25}
                   globalCompositeOperation="source-over"
-                  onClick={() => onSelectObject(object.id)}
                 />
                 <Text
                   x={object.points[0]?.x ?? 0}
@@ -1029,15 +1277,20 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 opacity={getObjectOpacity(object)}
                 dash={isSelected ? [8, 4] : undefined}
                 draggable={activeTool === 'select'}
-                onClick={() => onSelectObject(object.id)}
+                onMouseDown={(event) => {
+                  stopObjectPointerEvent(event);
+                  onSelectObject(object.id);
+                }}
+                onClick={(event) => {
+                  stopObjectPointerEvent(event);
+                  onSelectObject(object.id);
+                }}
+                onDragStart={(event) => {
+                  stopObjectPointerEvent(event);
+                  onSelectObject(object.id);
+                }}
                 onDragEnd={(event) => {
-                  onUpdateObject(object.id, {
-                    area: {
-                      ...object.area!,
-                      x: Math.round(event.target.x()),
-                      y: Math.round(event.target.y())
-                    }
-                  });
+                  moveBox(object, event);
                 }}
               />
               <Text
@@ -1429,7 +1682,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                       </Group>
                     </>
                   ) : (
-                    renderMaskAnnotations(visibleObjects)
+                    renderMaskAnnotations(previewVisibleObjects)
                   )}
                 </Layer>
 
@@ -1465,11 +1718,58 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                       />
                     </>
                   ) : (
-                    renderDetectionAnnotations(visibleObjects)
+                    renderDetectionAnnotations(previewVisibleObjects)
                   )}
                 </Layer>
 
                 <Layer x={offset.x} y={offset.y} scaleX={canvasScale} scaleY={canvasScale}>
+                  {activeTool === 'select' && selectedObject?.type === 'box' && selectedObject.area && (
+                    <>
+                      {getBoxResizeHandles(selectedObject.area).map((handle) => (
+                        <Rect
+                          key={`${selectedObject.id}-${handle.id}`}
+                          x={handle.x - RESIZE_HANDLE_SIZE / canvasScale / 2}
+                          y={handle.y - RESIZE_HANDLE_SIZE / canvasScale / 2}
+                          width={RESIZE_HANDLE_SIZE / canvasScale}
+                          height={RESIZE_HANDLE_SIZE / canvasScale}
+                          fill="#f8fafc"
+                          stroke="#16a34a"
+                          strokeWidth={2 / canvasScale}
+                          draggable
+                          onMouseDown={(event) => {
+                            stopObjectPointerEvent(event);
+                            onSelectObject(selectedObject.id);
+                          }}
+                          onClick={stopObjectPointerEvent}
+                          onDragMove={(event) => resizeBox(selectedObject, handle.id, event, false)}
+                          onDragEnd={(event) => resizeBox(selectedObject, handle.id, event, true)}
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {activeTool === 'select' &&
+                    selectedObject?.type === 'polygon' &&
+                    selectedObject.points?.map((point, index) => (
+                      <Circle
+                        key={`${selectedObject.id}-point-${index}`}
+                        x={point.x}
+                        y={point.y}
+                        radius={7 / canvasScale}
+                        fill="#f8fafc"
+                        stroke="#16a34a"
+                        strokeWidth={2 / canvasScale}
+                        draggable
+                        onMouseDown={(event) => {
+                          stopObjectPointerEvent(event);
+                          onSelectObject(selectedObject.id);
+                        }}
+                        onClick={stopObjectPointerEvent}
+                        onDragMove={(event) => movePolygonPoint(selectedObject, index, event, false)}
+                        onDragEnd={(event) => movePolygonPoint(selectedObject, index, event, true)}
+                      />
+                    ))}
+
                   {draftBox && (
                     <Rect
                       x={draftBox.x}
@@ -1677,25 +1977,9 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
             <section className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)] custom-scroll">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div>
-                  <div className="text-sm font-semibold text-slate-100">Классы и инструменты</div>
-                  <div className="text-[11px] text-slate-500">{objects.length} объектов</div>
+                  <div className="text-sm font-semibold text-slate-100">Классы</div>
+                  <div className="text-[11px] text-slate-500">{getClassCountLabel(classList.length)}</div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {toolOptions.map((tool) => (
-                  <button
-                    key={tool.id}
-                    type="button"
-                    onClick={() => onToolChange(activeTool === tool.id ? null : tool.id)}
-                    className={`rounded-xl px-3 py-2 text-xs transition ${
-                      activeTool === tool.id
-                        ? 'bg-brand-500 text-white'
-                        : 'border border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-700'
-                    }`}
-                  >
-                    {tool.label}
-                  </button>
-                ))}
               </div>
 
               <div className="mt-3 space-y-2">
@@ -1736,6 +2020,100 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   +
                 </button>
               </div>
+
+              <details className="group mt-3 rounded-xl border border-slate-800 bg-slate-950">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-slate-100">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-500/15 text-brand-100">
+                      <Wand2 size={15} />
+                    </span>
+                    <span className="truncate">Анализ моделями</span>
+                  </span>
+                  <ChevronDown size={16} className="shrink-0 text-slate-400 transition group-open:rotate-180" />
+                </summary>
+
+                <div className="border-t border-slate-800 px-3 pb-3 pt-2">
+                  <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">Классы</div>
+                  <div className="mt-2 grid gap-1.5">
+                    {classList.map((item) => {
+                      const isChecked = analysisClassNames.includes(item.name);
+
+                      return (
+                        <label
+                          key={item.name}
+                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-200"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => onToggleAnalysisClass(item.name)}
+                            className="h-4 w-4 rounded border-slate-700 bg-slate-950 accent-brand-500"
+                          />
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="min-w-0 truncate">{item.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">Сегментация</div>
+                  <div className="mt-2 grid gap-1.5">
+                    {segmentationModels.map((model) => {
+                      const modelKey = String(model.id);
+                      const isChecked = selectedSegmentationModels.includes(modelKey);
+
+                      return (
+                        <label
+                          key={model.id}
+                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-200"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => onToggleModel(modelKey, 'segmentation')}
+                            className="h-4 w-4 rounded border-slate-700 bg-slate-950 accent-emerald-500"
+                          />
+                          <span className="min-w-0 truncate">{model.name}</span>
+                        </label>
+                      );
+                    })}
+                    {!segmentationModels.length && <div className="rounded-lg bg-slate-900/70 px-2.5 py-2 text-xs text-slate-500">Нет доступных моделей сегментации</div>}
+                  </div>
+
+                  <div className="mt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">Детекция</div>
+                  <div className="mt-2 grid gap-1.5">
+                    {detectionModels.map((model) => {
+                      const modelKey = String(model.id);
+                      const isChecked = selectedDetectionModels.includes(modelKey);
+
+                      return (
+                        <label
+                          key={model.id}
+                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-200"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => onToggleModel(modelKey, 'detection')}
+                            className="h-4 w-4 rounded border-slate-700 bg-slate-950 accent-brand-500"
+                          />
+                          <span className="min-w-0 truncate">{model.name}</span>
+                        </label>
+                      );
+                    })}
+                    {!detectionModels.length && <div className="rounded-lg bg-slate-900/70 px-2.5 py-2 text-xs text-slate-500">Нет доступных моделей детекции</div>}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={onRunModels}
+                    disabled={isRunningModels}
+                    className="mt-3 w-full rounded-xl bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-400 disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {isRunningModels ? 'Отправляем на анализ...' : 'Отправить на анализ'}
+                  </button>
+                </div>
+              </details>
             </section>
           </aside>
         </div>

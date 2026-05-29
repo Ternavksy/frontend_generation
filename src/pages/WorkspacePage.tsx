@@ -1,6 +1,5 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Wand2 } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import WorkspaceCanvas, {
   type ActiveToolMode,
@@ -9,7 +8,7 @@ import WorkspaceCanvas, {
   type CompareViewMode,
   type OpacityTargetMode,
   type PolygonPoint,
-  type ToolMode
+  type WorkspaceModelItem
 } from '../components/WorkspaceCanvas';
 import {
   api,
@@ -125,17 +124,6 @@ const initialClasses: ClassItem[] = [
   { name: 'Background', source: 'model', color: '#ff8fb1', visible: false }
 ];
 
-const toolOptions: Array<{ id: ToolMode; label: string }> = [
-  { id: 'select', label: 'Выбор' },
-  { id: 'box', label: 'Box' },
-  { id: 'polygon', label: 'Polygon' },
-  { id: 'brush', label: 'Кисть' },
-  { id: 'eraser', label: 'Ластик' },
-  { id: 'split', label: 'Разделение' },
-  { id: 'zoom', label: 'Zoom' },
-  { id: 'move', label: 'Move' }
-];
-
 const cloneState = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 
 const getObjectSourceKey = (object: AnnotationObject) => {
@@ -157,6 +145,23 @@ const createLocalAnnotationId = () => `local-${Date.now()}-${Math.random().toStr
 
 const getAnnotationApiType = (object: Pick<AnnotationObject, 'type'>): AnnotationPayload['type'] =>
   object.type === 'box' ? 'detection' : 'segmentation';
+
+const normalizeModelName = (name: string) => name.trim().toLowerCase();
+
+const uniqueModelsByName = (models: ModelConfig[]) => {
+  const seen = new Set<string>();
+
+  return models.filter((model) => {
+    const key = normalizeModelName(model.name);
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+};
 
 const serializeAnnotationObject = (object: AnnotationObject): AnnotationPayload => {
   const { id: _id, ...objectData } = object;
@@ -253,6 +258,7 @@ const WorkspacePage = () => {
   const [hasSavedDraft, setHasSavedDraft] = useState<boolean>(() => Boolean(localStorage.getItem(STORAGE_KEY)));
   const [opacityTargetMode, setOpacityTargetMode] = useState<OpacityTargetMode>('class');
   const [opacityClassName, setOpacityClassName] = useState(initialState.activeLabel);
+  const [analysisClassNames, setAnalysisClassNames] = useState<string[]>([initialState.activeLabel]);
   const [history, setHistory] = useState<WorkspaceState[]>([cloneState(initialState)]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const historyRef = useRef<WorkspaceState[]>([cloneState(initialState)]);
@@ -276,6 +282,22 @@ const WorkspacePage = () => {
 
     setOpacityClassName(workspace.activeLabel || workspace.classList[0]?.name || '');
   }, [opacityClassName, workspace.activeLabel, workspace.classList]);
+
+  useEffect(() => {
+    const classNames = new Set(workspace.classList.map((item) => item.name));
+
+    setAnalysisClassNames((current) => {
+      const validCurrent = current.filter((name) => classNames.has(name));
+
+      if (validCurrent.length || current.length === 0) {
+        return validCurrent;
+      }
+
+      const fallback = workspace.activeLabel || workspace.classList[0]?.name;
+      return fallback ? [fallback] : [];
+    });
+  }, [workspace.activeLabel, workspace.classList]);
+
   const comparisonOptions = useMemo(() => {
     const dynamic = new Set<string>();
 
@@ -291,12 +313,12 @@ const WorkspacePage = () => {
 
     return Array.from(dynamic);
   }, [availableModels, objects, workspace.selectedSegmentationModels, workspace.selectedDetectionModels]);
-  const segmentationModels = useMemo(
-    () => availableModels.filter((model) => model.type.includes('segmentation')),
+  const segmentationModels = useMemo<WorkspaceModelItem[]>(
+    () => uniqueModelsByName(availableModels.filter((model) => model.type.includes('segmentation'))),
     [availableModels]
   );
-  const detectionModels = useMemo(
-    () => availableModels.filter((model) => model.type.includes('detection')),
+  const detectionModels = useMemo<WorkspaceModelItem[]>(
+    () => uniqueModelsByName(availableModels.filter((model) => model.type.includes('detection'))),
     [availableModels]
   );
   const selectedModelIds = useMemo(
@@ -929,7 +951,14 @@ const WorkspacePage = () => {
     );
   };
 
+  const toggleAnalysisClass = (name: string) => {
+    setAnalysisClassNames((current) =>
+      current.includes(name) ? current.filter((item) => item !== name) : [...current, name]
+    );
+  };
+
   const handleRunModels = () => {
+    const selectedClassNames = analysisClassNames.length ? analysisClassNames : [];
     const activeModelNames = availableModels
       .filter((model) => selectedModelIds.includes(model.id))
       .map((model) => model.name);
@@ -937,12 +966,17 @@ const WorkspacePage = () => {
     const classTypeIds = availableClasses
       .filter((classType) => {
         const className = classType.name_eng || classType.name_ru;
-        return className === workspace.activeLabel || !hiddenLabels.includes(className);
+        return selectedClassNames.includes(className);
       })
       .map((classType) => classType.id);
 
     if (!selectedModelIds.length) {
       setStatusMessage('Выберите хотя бы одну модель');
+      return;
+    }
+
+    if (!selectedClassNames.length) {
+      setStatusMessage('Выберите хотя бы один класс для анализа');
       return;
     }
 
@@ -954,7 +988,7 @@ const WorkspacePage = () => {
     const currentImageId = currentImage.id;
 
     setIsRunningModels(true);
-    setStatusMessage(`Подключаем WebSocket анализа: ${activeModelNames.join(', ')}`);
+    setStatusMessage(`Подключаем WebSocket анализа: ${activeModelNames.join(', ')}; классы: ${selectedClassNames.join(', ')}`);
 
     const handleAnalysisMessage = (message: AnalysisSocketMessage) => {
       if (message.type === 'task_created') {
@@ -993,7 +1027,7 @@ const WorkspacePage = () => {
       .catch((err) => {
         setStatusMessage(err instanceof Error ? `WebSocket не прошёл, пробуем REST: ${err.message}` : 'WebSocket не прошёл, пробуем REST');
         return api
-          .runModels(selectedProjectId, currentImageId, selectedModelIds, workspace.activeLabel)
+          .runModels(selectedProjectId, currentImageId, selectedModelIds, selectedClassNames[0])
           .then((annotations) => {
             const generated = annotations.map(annotationFromApi);
 
@@ -1065,7 +1099,6 @@ const WorkspacePage = () => {
               compareLeftSource={workspace.compareLeftSource}
               compareRightSource={workspace.compareRightSource}
               classList={workspace.classList}
-              toolOptions={toolOptions}
               newClassName={newClassName}
               imageName={currentImage.name}
               imageSrc={currentImage.src}
@@ -1079,6 +1112,12 @@ const WorkspacePage = () => {
               selectedObjectId={workspace.selectedObjectId}
               objects={objects}
               hiddenLabels={hiddenLabels}
+              segmentationModels={segmentationModels}
+              detectionModels={detectionModels}
+              selectedSegmentationModels={workspace.selectedSegmentationModels}
+              selectedDetectionModels={workspace.selectedDetectionModels}
+              analysisClassNames={analysisClassNames}
+              isRunningModels={isRunningModels}
               onToggleMenu={() => setIsMenuOpen((current) => !current)}
               onCloseMenu={() => setIsMenuOpen(false)}
               onSave={handleSave}
@@ -1104,6 +1143,9 @@ const WorkspacePage = () => {
                 })
               }
               onToggleClassVisibility={toggleClassVisibility}
+              onToggleAnalysisClass={toggleAnalysisClass}
+              onToggleModel={toggleModel}
+              onRunModels={handleRunModels}
               onNewClassNameChange={setNewClassName}
               onAddClass={addClass}
               onCreateObject={createObject}
@@ -1223,76 +1265,7 @@ const WorkspacePage = () => {
               transition={{ delay: 0.1 }}
               className="rounded-[24px] border border-slate-800 bg-slate-900/90 p-5"
             >
-              <div className="mb-4 flex items-center gap-3">
-                <div className="rounded-2xl bg-brand-500/15 p-3 text-brand-100">
-                  <Wand2 size={18} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Модели для анализа</h2>
-                  <p className="text-sm text-slate-400">Переключатели и запуск моделей теперь тоже работают на фронтенде.</p>
-                </div>
-              </div>
-
-              <div className="grid gap-4">
-                <div>
-                  <div className="mb-2 text-sm font-medium text-slate-200">Сегментация</div>
-                  <div className="flex flex-wrap gap-2">
-                    {segmentationModels.map((model) => {
-                      const modelKey = String(model.id);
-                      const isActive = workspace.selectedSegmentationModels.includes(modelKey);
-
-                      return (
-                        <button
-                          key={model.id}
-                          type="button"
-                          onClick={() => toggleModel(modelKey, 'segmentation')}
-                          className={`rounded-full px-4 py-2 text-sm ${
-                            isActive ? 'bg-emerald-500 text-slate-950' : 'border border-slate-700 bg-slate-950 text-slate-300'
-                          }`}
-                        >
-                          {model.name}
-                        </button>
-                      );
-                    })}
-                    {!segmentationModels.length && <div className="text-sm text-slate-500">Нет доступных моделей сегментации</div>}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-2 text-sm font-medium text-slate-200">Детекция</div>
-                  <div className="flex flex-wrap gap-2">
-                    {detectionModels.map((model) => {
-                      const modelKey = String(model.id);
-                      const isActive = workspace.selectedDetectionModels.includes(modelKey);
-
-                      return (
-                        <button
-                          key={model.id}
-                          type="button"
-                          onClick={() => toggleModel(modelKey, 'detection')}
-                          className={`rounded-full px-4 py-2 text-sm ${
-                            isActive ? 'bg-brand-500 text-white' : 'border border-slate-700 bg-slate-950 text-slate-300'
-                          }`}
-                        >
-                          {model.name}
-                        </button>
-                      );
-                    })}
-                    {!detectionModels.length && <div className="text-sm text-slate-500">Нет доступных моделей детекции</div>}
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleRunModels}
-                disabled={isRunningModels}
-                className="mt-4 w-full rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60"
-              >
-                {isRunningModels ? 'Модели обрабатывают изображение...' : 'Запустить выбранные модели'}
-              </button>
-
-              <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
                 <div className="mb-2 text-sm font-medium text-white">Сравнение результатов</div>
                 <div className="mb-3 text-xs text-slate-400">
                   Переключайтесь между обычным просмотром и split-view, чтобы сравнить импорт, ручную разметку и результаты моделей.
