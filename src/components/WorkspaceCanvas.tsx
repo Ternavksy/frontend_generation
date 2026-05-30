@@ -1255,7 +1255,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
           const isSelected = selectedObjectId === object.id;
           const stroke = isSelected ? '#8cfb95' : object.color;
-          const fill = isSelected ? 'rgba(124, 252, 138, 0.28)' : 'rgba(124, 252, 138, 0.18)';
+          const fill = object.color;
           const listedIndex = paintMaskObjects.findIndex((item) => item.id === object.id);
 
           if (object.type === 'polygon') {
@@ -1356,7 +1356,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
         {localDetectionObjects.map((object, index) => {
           const isSelected = selectedObjectId === object.id;
           const stroke = isSelected ? '#8cfb95' : object.color;
-          const fill = isSelected ? 'rgba(124, 252, 138, 0.12)' : 'rgba(124, 252, 138, 0.06)';
+          const fill = object.color;
 
           if (!object.area) {
             return null;
@@ -2004,7 +2004,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 </div>
                 <input
                   type="range"
-                  min="10"
+                  min="0"
                   max="100"
                   value={Math.round(currentOpacity * 100)}
                   onChange={(event) => updateCurrentOpacity(Number(event.target.value) / 100)}

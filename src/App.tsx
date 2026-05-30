@@ -2,7 +2,6 @@ import { Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-
 import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import {
-  DashboardPage,
   AuthPage,
   WorkspacePage,
   DatasetsPage,
@@ -15,6 +14,8 @@ import {
 import { TopNav } from './components';
 import SplashScreen from './components/SplashScreen';
 import { api, type AuthPayload } from './lib/api';
+
+const AUTH_REFRESH_INTERVAL_MS = 14 * 60 * 1000;
 
 const App = () => {
   const location = useLocation();
@@ -42,8 +43,24 @@ const App = () => {
     await api.login(payload);
     setIsAuthorized(true);
     setIsSplashVisible(true);
-    navigate('/dashboard');
+    navigate('/projects');
   };
+
+  useEffect(() => {
+    if (!isAuthorized) {
+      return undefined;
+    }
+
+    const refreshIntervalId = window.setInterval(() => {
+      api.refreshSession().catch(() => {
+        api.tokenStorage.clear();
+        setIsAuthorized(false);
+        navigate('/auth');
+      });
+    }, AUTH_REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(refreshIntervalId);
+  }, [isAuthorized, navigate]);
 
   if (isCheckingSession) {
     return (
@@ -69,9 +86,9 @@ const App = () => {
       >
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<Navigate to={isAuthorized ? '/dashboard' : '/auth'} replace />} />
-            <Route path="/auth" element={isAuthorized ? <Navigate to="/dashboard" replace /> : <AuthPage onLogin={handleLogin} />} />
-            <Route path="/dashboard" element={isAuthorized ? <DashboardPage /> : <Navigate to="/auth" replace />} />
+            <Route path="/" element={<Navigate to={isAuthorized ? '/projects' : '/auth'} replace />} />
+            <Route path="/auth" element={isAuthorized ? <Navigate to="/projects" replace /> : <AuthPage onLogin={handleLogin} />} />
+            <Route path="/dashboard" element={<Navigate to={isAuthorized ? '/projects' : '/auth'} replace />} />
             <Route path="/projects" element={isAuthorized ? <DatasetsPage /> : <Navigate to="/auth" replace />} />
             <Route path="/models" element={isAuthorized ? <ModelsPage /> : <Navigate to="/auth" replace />} />
             <Route path="/upload" element={isAuthorized ? <UploadPage /> : <Navigate to="/auth" replace />} />

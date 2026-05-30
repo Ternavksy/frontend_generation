@@ -155,16 +155,34 @@ const parseResponse = async <T>(response: Response): Promise<T> => {
   return data as T;
 };
 
-const refreshTokens = async () => {
-  const refreshToken = tokenStorage.getRefresh();
-  if (!refreshToken) {
-    throw new ApiError(401, { detail: 'Не найден refresh token' });
+const unwrapArray = <T>(value: unknown, keys: string[]): T[] => {
+  if (Array.isArray(value)) {
+    return value as T[];
   }
 
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const arrayValue = keys.map((key) => record[key]).find(Array.isArray);
+    return arrayValue ? (arrayValue as T[]) : [];
+  }
+
+  return [];
+};
+
+const unwrapObject = <T>(value: unknown, keys: string[], fallbackMessage: string): T => {
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const nestedValue = keys.map((key) => record[key]).find((item) => item && typeof item === 'object' && !Array.isArray(item));
+    return (nestedValue ?? record) as T;
+  }
+
+  throw new ApiError(500, { detail: fallbackMessage });
+};
+
+const refreshTokens = async () => {
   const response = await fetch(`${API_BASE_URL}/auth/refresh/`, {
     method: 'PUT',
-    credentials: 'include',
-    headers: { 'X-Refresh-Token': refreshToken }
+    credentials: 'include'
   });
   const tokens = await parseResponse<AuthResponse>(response);
   tokenStorage.set(tokens);
@@ -179,7 +197,7 @@ const request = async <T>(path: string, init: RequestInit = {}, retry = true): P
     headers: makeHeaders(init.headers, isFormData)
   });
 
-  if (response.status === 401 && retry && tokenStorage.getRefresh()) {
+  if (response.status === 401 && retry) {
     await refreshTokens();
     return request<T>(path, init, false);
   }
@@ -193,7 +211,7 @@ const requestBlob = async (path: string, retry = true): Promise<Blob> => {
     headers: makeHeaders(undefined, true)
   });
 
-  if (response.status === 401 && retry && tokenStorage.getRefresh()) {
+  if (response.status === 401 && retry) {
     await refreshTokens();
     return requestBlob(path, false);
   }
@@ -294,37 +312,47 @@ export const api = {
     }
   },
 
+  refreshSession: refreshTokens,
+
   getMe: () => request<UserBase>('/user/me/'),
   getDefinitionMe: () => request<UserDefinition>('/user/about/me'),
 
-  listProjects: () => request<Project[]>('/projects/'),
+  listProjects: async () => unwrapArray<Project>(await request<unknown>('/projects/'), ['projects', 'items', 'data', 'results']),
   createProject: (name: string) =>
-    request<Project>('/projects/', {
+    request<unknown>('/projects/', {
       method: 'POST',
       body: JSON.stringify({ name })
-    }),
+    }).then((value) => unwrapObject<Project>(value, ['project', 'item', 'data', 'result'], 'Не удалось создать проект.')),
   deleteProject: (projectId: string) => request<{ detail: string }>(`/projects/${projectId}`, { method: 'DELETE' }),
 
-  getProjectModels: (projectId: string) => request<ModelConfig[]>(`/projects/${projectId}/models`),
-  getProjectClasses: (projectId: string) => request<ClassType[]>(`/projects/${projectId}/classes`),
+  getProjectModels: async (projectId: string) =>
+    unwrapArray<ModelConfig>(await request<unknown>(`/projects/${projectId}/models`), ['models', 'items', 'data', 'results']),
+  getProjectClasses: async (projectId: string) =>
+    unwrapArray<ClassType>(await request<unknown>(`/projects/${projectId}/classes`), ['classes', 'items', 'data', 'results']),
   createProjectClass: (projectId: string, name: string) =>
     request<ClassType>(`/projects/${projectId}/classes`, {
       method: 'POST',
       body: JSON.stringify({ name_eng: name })
     }),
-  getProjectImages: (projectId: string) => request<ProjectImage[]>(`/image/${projectId}/images`),
+  getProjectImages: async (projectId: string) =>
+    unwrapArray<ProjectImage>(await request<unknown>(`/image/${projectId}/images`), ['images', 'items', 'data', 'results']),
   getImageObjectUrl: async (projectId: string, imageId: string) => {
     const blob = await requestBlob(`/image/${projectId}/images/${imageId}/download`);
     return URL.createObjectURL(blob);
   },
 
-  getAnnotations: (projectId: string, imageId: string) =>
-    request<AnnotationResponse[]>(`/annotations/${projectId}/images/${imageId}`),
-  runModels: (projectId: string, imageId: string, modelIds: number[], className: string) =>
-    request<AnnotationResponse[]>(`/models/${projectId}/images/${imageId}/run`, {
+  getAnnotations: async (projectId: string, imageId: string) =>
+    unwrapArray<AnnotationResponse>(await request<unknown>(`/annotations/${projectId}/images/${imageId}`), [
+      'annotations',
+      'items',
+      'data',
+      'results'
+    ]),
+  runModels: async (projectId: string, imageId: string, modelIds: number[], className: string) =>
+    unwrapArray<AnnotationResponse>(await request<unknown>(`/models/${projectId}/images/${imageId}/run`, {
       method: 'POST',
       body: JSON.stringify({ model_ids: modelIds, class_name: className })
-    }),
+    }), ['annotations', 'items', 'data', 'results']),
   startAnalysisViaWebSocket,
   createAnnotation: (projectId: string, imageId: string, payload: AnnotationPayload) =>
     request<AnnotationResponse>(`/annotations/${projectId}/images/${imageId}`, {
@@ -348,10 +376,10 @@ export const api = {
       JSON.stringify(files.map((file) => ({ format: file.type.split('/')[1] ?? file.name.split('.').pop() ?? null })))
     );
     files.forEach((file) => formData.append('files', file));
-    return request<ProjectImage[]>(`/image/${projectId}/images/upload`, {
+    return request<unknown>(`/image/${projectId}/images/upload`, {
       method: 'POST',
       body: formData
-    });
+    }).then((value) => unwrapArray<ProjectImage>(value, ['images', 'items', 'data', 'results', 'uploaded']));
   },
 
   imageDownloadUrl: (projectId: string, imageId: string) => `${API_BASE_URL}/image/${projectId}/images/${imageId}/download`

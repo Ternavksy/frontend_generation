@@ -1,11 +1,9 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import WorkspaceCanvas, {
   type ActiveToolMode,
   type AnnotationObject,
   type Area,
-  type CompareViewMode,
   type OpacityTargetMode,
   type PolygonPoint,
   type WorkspaceModelItem
@@ -46,9 +44,6 @@ interface WorkspaceState {
   activeTool: ActiveToolMode;
   activeLabel: string;
   maskOpacity: number;
-  compareViewMode: CompareViewMode;
-  compareLeftSource: string;
-  compareRightSource: string;
   selectedSegmentationModels: string[];
   selectedDetectionModels: string[];
 }
@@ -238,9 +233,6 @@ const buildInitialState = (): WorkspaceState => ({
   activeTool: 'polygon',
   activeLabel: 'Kitten',
   maskOpacity: 0.58,
-  compareViewMode: 'single',
-  compareLeftSource: 'Imported',
-  compareRightSource: 'YOLO World',
   selectedSegmentationModels: ['SAM 2'],
   selectedDetectionModels: ['YOLO World']
 });
@@ -300,21 +292,6 @@ const WorkspacePage = () => {
     });
   }, [workspace.activeLabel, workspace.classList]);
 
-  const comparisonOptions = useMemo(() => {
-    const dynamic = new Set<string>();
-
-    objects.forEach((object) => {
-      dynamic.add(getObjectSourceKey(object));
-    });
-
-    const selectedModelNames = availableModels
-      .filter((model) => [...workspace.selectedSegmentationModels, ...workspace.selectedDetectionModels].includes(String(model.id)))
-      .map((model) => model.name);
-
-    ['Imported', 'Manual', ...selectedModelNames].forEach((item) => dynamic.add(item));
-
-    return Array.from(dynamic);
-  }, [availableModels, objects, workspace.selectedSegmentationModels, workspace.selectedDetectionModels]);
   const segmentationModels = useMemo<WorkspaceModelItem[]>(
     () => uniqueModelsByName(availableModels.filter((model) => model.type.includes('segmentation'))),
     [availableModels]
@@ -1067,7 +1044,7 @@ const WorkspacePage = () => {
       />
 
       <div className="mx-auto max-w-[1720px] px-4 pb-6 pt-4">
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="min-w-0">
           <section className="min-h-0 min-w-0">
             <WorkspaceCanvas
               activeTool={workspace.activeTool}
@@ -1097,9 +1074,9 @@ const WorkspacePage = () => {
               onOpacityClassNameChange={setOpacityClassName}
               onClassOpacityChange={updateClassOpacity}
               onObjectOpacityChange={updateObjectOpacity}
-              compareViewMode={workspace.compareViewMode}
-              compareLeftSource={workspace.compareLeftSource}
-              compareRightSource={workspace.compareRightSource}
+              compareViewMode="single"
+              compareLeftSource="Imported"
+              compareRightSource="Manual"
               classList={workspace.classList}
               newClassName={newClassName}
               imageName={currentImage.name}
@@ -1154,195 +1131,6 @@ const WorkspacePage = () => {
               onUpdateObject={updateObject}
               onSplitObject={splitObject}
             />
-          </section>
-
-          <section className="min-h-0 lg:sticky lg:top-4">
-            <div className="space-y-4">
-            {/* <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-[24px] border border-slate-800 bg-slate-900/90 p-5"
-            >
-              <div className="mb-4 flex items-center gap-3">
-                <div className="rounded-2xl bg-brand-500/15 p-3 text-brand-100">
-                  <FolderPlus size={20} />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-semibold text-white">Рабочая панель аннотаций</h1>
-                  <p className="text-sm text-slate-400">
-                    Все основные элементы интерфейса работают на фронтенде: загрузка, сохранение, навигация, undo/redo и моделирование результатов.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid gap-3">
-                <label className="text-sm text-slate-300">
-                  Проект
-                  <select
-                    value={selectedProjectId}
-                    onChange={(event) => setSelectedProjectId(event.target.value)}
-                    className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-                  >
-                    <option value="">Проект не выбран</option>
-                    {projects.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="text-sm text-slate-300">
-                  Задача
-                  <input
-                    value={workspace.taskName}
-                    onChange={(event) =>
-                      updateWorkspace((current) => ({ ...current, taskName: event.target.value }), {
-                        recordHistory: false
-                      })
-                    }
-                    className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
-                  />
-                </label>
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium text-white">Текущее изображение</div>
-                    <div className="mt-1 text-sm text-slate-400">
-                      {isLoadingRemoteImages
-                        ? 'Получаем изображения из backend...'
-                        : 'Изображения берутся из выбранного проекта. Переключайтесь между ними в toolbar.'}
-                    </div>
-                  </div>
-                  <div className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-200">
-                    {currentImage.name}
-                  </div>
-                </div>
-                <select
-                  value={workspace.currentImageIndex}
-                  onChange={(event) => setCurrentImageIndex(Number(event.target.value))}
-                  className="mt-4 w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-500"
-                >
-                  {workspace.images.map((image, index) => (
-                    <option key={image.id} value={index}>
-                      {index + 1}. {image.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="mt-4 inline-flex items-center justify-center rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-                >
-                  Загрузить изображение
-                </button>
-              </div>
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-emerald-200">
-                    <Upload size={16} />
-                    Импорт изображений
-                  </div>
-                  <p className="mt-2 text-sm text-slate-300">
-                    Каждое загруженное изображение добавляется в локальный dataset и становится доступным в верхней навигации по кадрам.
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-brand-500/20 bg-brand-500/10 p-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-brand-100">
-                    <Tags size={16} />
-                    Автоклассы из аннотаций
-                  </div>
-                  <p className="mt-2 text-sm text-slate-300">
-                    Когда создаётся объект с новым label, этот класс автоматически попадает в общий список проекта.
-                  </p>
-                </div>
-              </div>
-            </motion.div> */}
-
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="rounded-[24px] border border-slate-800 bg-slate-900/90 p-5"
-            >
-              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                <div className="mb-2 text-sm font-medium text-white">Сравнение результатов</div>
-                <div className="mb-3 text-xs text-slate-400">
-                  Переключайтесь между обычным просмотром и split-view, чтобы сравнить импорт, ручную разметку и результаты моделей.
-                </div>
-                <div className="mb-4 flex flex-wrap gap-2">
-                  {(['single', 'split'] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() =>
-                        updateWorkspace(
-                          (current) => ({ ...current, compareViewMode: mode }),
-                          {
-                            recordHistory: false,
-                            status: mode === 'split' ? 'Включён split-view' : 'Включён обычный просмотр'
-                          }
-                        )
-                      }
-                      className={`rounded-full px-4 py-2 text-sm ${
-                        workspace.compareViewMode === mode
-                          ? 'bg-brand-500 text-white'
-                          : 'border border-slate-700 bg-slate-900 text-slate-300'
-                      }`}
-                    >
-                      {mode === 'single' ? 'Single view' : 'Split view'}
-                    </button>
-                  ))}
-                </div>
-
-                {workspace.compareViewMode === 'split' && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="text-xs text-slate-400">
-                      Левая часть
-                      <select
-                        value={workspace.compareLeftSource}
-                        onChange={(event) =>
-                          updateWorkspace(
-                            (current) => ({ ...current, compareLeftSource: event.target.value }),
-                            { recordHistory: false, status: `Слева: ${event.target.value}` }
-                          )
-                        }
-                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
-                      >
-                        {comparisonOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="text-xs text-slate-400">
-                      Правая часть
-                      <select
-                        value={workspace.compareRightSource}
-                        onChange={(event) =>
-                          updateWorkspace(
-                            (current) => ({ ...current, compareRightSource: event.target.value }),
-                            { recordHistory: false, status: `Справа: ${event.target.value}` }
-                          )
-                        }
-                        className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
-                      >
-                        {comparisonOptions.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-            </div>
           </section>
         </div>
       </div>

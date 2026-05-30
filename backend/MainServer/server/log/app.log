@@ -607,3 +607,33 @@ passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passl
 2026-05-29 14:42:32,055 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
 2026-05-29 14:42:35,286 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
 2026-05-29 14:42:35,337 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:50:01,320 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:50:01,356 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:50:15,253 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:50:15,328 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:50:26,388 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:50:26,407 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:53:25,391 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:53:25,436 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:53:48,317 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:53:48,364 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:59:16,166 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 14:59:16,195 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-05-29 15:00:09,399 - ImageRouter - INFO - Загрузка изображений для проекта fa3a4b1d-25b4-4e12-8724-2c69a5cc5674
+2026-05-29 15:00:09,421 - ImageRouter - INFO - Загрузка изображений для проекта fa3a4b1d-25b4-4e12-8724-2c69a5cc5674
+2026-05-29 15:00:17,473 - ImageRouter - INFO - Загрузка изображений для проекта fa3a4b1d-25b4-4e12-8724-2c69a5cc5674
+2026-05-29 15:00:17,492 - ImageRouter - INFO - Загрузка изображений для проекта fa3a4b1d-25b4-4e12-8724-2c69a5cc5674
+2026-05-29 15:15:05,977 - ImageRouter - INFO - Загрузка изображений для проекта fa3a4b1d-25b4-4e12-8724-2c69a5cc5674
+2026-05-29 15:15:05,989 - ImageRouter - INFO - Загрузка изображений для проекта fa3a4b1d-25b4-4e12-8724-2c69a5cc5674
+2026-05-29 15:29:13,293 - passlib.handlers.bcrypt - DEBUG - trapped unexpected response from 'os_crypt' backend: verify('test', b'$2$04$5BJqKfqMQvV7nS.yUguNcuRfMMOXK0xPWavM7pOzjEi5ze5T1k8/S'):
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 303, in safe_verify
+    return verify(secret, hash)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 837, in _calc_checksum
+    raise uh.exc.InternalBackendError(
+passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passlib recommends running `pip install bcrypt` for general bcrypt support.(config=<hash <class 'str'> value omitted>, secret=<hash <class 'bytes'> value omitted>)
+2026-05-29 15:29:13,306 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround

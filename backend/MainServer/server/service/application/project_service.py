@@ -4,10 +4,11 @@ import logging
 from typing import List
 from uuid import UUID
 from fastapi import HTTPException, status
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 
 from server.service.dal.repositories import ProjectRepository, CacheObjectClassesRepository, ClassTypeRepository, UserRepository, AnnotationRepository, MaskRepository
-from server.service.db.shemas.models import Project, User, ClassTypeProject
+from server.service.db.shemas.models import AnalysisTask, Annotation, ClassTypeProject, Image, Mask, Project, User, project_user_table
 from server.core.dependencies import TranslationService
 from server.service.transport import ProjectCreate, ClassTypeCreate, AddMemberRequest
 
@@ -31,7 +32,14 @@ class ProjectService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Проект не найден")
         if project.created_by_id != user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Только создатель может удалить проект")
-        
+
+        image_ids = select(Image.id).where(Image.project_id == project_id)
+        await db.execute(delete(AnalysisTask).where(AnalysisTask.image_id.in_(image_ids)))
+        await db.execute(delete(Annotation).where(Annotation.image_id.in_(image_ids)))
+        await db.execute(delete(Mask).where(Mask.image_id.in_(image_ids)))
+        await db.execute(delete(Image).where(Image.project_id == project_id))
+        await db.execute(delete(ClassTypeProject).where(ClassTypeProject.project_id == project_id))
+        await db.execute(delete(project_user_table).where(project_user_table.c.project_by_id == project_id))
         await ProjectRepository.delete_by_id(db, id_=project_id)
         await db.commit()
         return {"detail": "Проект удален"}
