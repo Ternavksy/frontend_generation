@@ -9,9 +9,9 @@ class AnnotationTypeEnum(str, Enum):
 
 
 class AnnotationCreate(BaseModel):
-    type: Literal['detection', 'segmentation'] = Field(
+    type: Literal['detect', 'segment', 'detection', 'segmentation'] = Field(
         default='detection',
-        description="Тип аннотации: 'detection' или 'segmentation'"
+        description="Тип аннотации: 'detect'/'segment' во входящем запросе или 'detection'/'segmentation' для совместимости"
     )
     class_name: str = Field(description="Класс объекта")
     data: Any = Field(description="Координаты/данные аннотации (JSONB)")
@@ -66,19 +66,39 @@ class AddMemberRequest(BaseModel):
 
 class AnnotationUpdate(BaseModel):
     """Для обновления одной аннотации через PUT (id берётся из path)"""
-    type: Optional[Literal['detection', 'segmentation']] = None
+    type: Optional[Literal['detect', 'segment', 'detection', 'segmentation']] = None
     class_name: Optional[str] = None
     data: Optional[Any] = None
     is_selected: Optional[bool] = None
+
+    @field_validator('type', mode='before')
+    @classmethod
+    def normalize_type(cls, v):
+        if hasattr(v, 'value'):
+            v = v.value
+        return {
+            'detect': 'detection',
+            'segment': 'segmentation'
+        }.get(v, v)
 
 
 class AnnotationBatchUpdate(BaseModel):
     """Для пакетного обновления (id указывается в теле)"""
     id: UUID = Field(..., description="UUID аннотации")
-    type: Optional[Literal['detection', 'segmentation']] = None
+    type: Optional[Literal['detect', 'segment', 'detection', 'segmentation']] = None
     class_name: Optional[str] = None
     data: Optional[Any] = None
     is_selected: Optional[bool] = None
+
+    @field_validator('type', mode='before')
+    @classmethod
+    def normalize_type(cls, v):
+        if hasattr(v, 'value'):
+            v = v.value
+        return {
+            'detect': 'detection',
+            'segment': 'segmentation'
+        }.get(v, v)
 
 
 class AnnotationResponse(BaseModel):

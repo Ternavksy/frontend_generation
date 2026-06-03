@@ -75,13 +75,13 @@ const App = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-950 text-slate-100">
       {isAuthorized && <TopNav />}
       <main
         className={
-          location.pathname === '/workspace'
-            ? 'min-h-[calc(100vh-60px)] overflow-x-hidden overflow-y-auto px-4 pb-6 pt-4 xl:px-12'
-            : 'min-h-screen px-4 py-5 xl:px-12'
+          location.pathname.startsWith('/workspace')
+            ? 'app-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-6 pt-4 xl:px-12'
+            : 'app-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 xl:px-12'
         }
       >
         <AnimatePresence mode="wait">
@@ -93,6 +93,7 @@ const App = () => {
             <Route path="/models" element={isAuthorized ? <ModelsPage /> : <Navigate to="/auth" replace />} />
             <Route path="/upload" element={isAuthorized ? <UploadPage /> : <Navigate to="/auth" replace />} />
             <Route path="/workspace" element={isAuthorized ? <WorkspacePage /> : <Navigate to="/auth" replace />} />
+            <Route path="/workspace/:projectId" element={isAuthorized ? <WorkspacePage /> : <Navigate to="/auth" replace />} />
             <Route path="/profile" element={isAuthorized ? <ProfilePage /> : <Navigate to="/auth" replace />} />
             <Route path="/billing" element={isAuthorized ? <BillingPage /> : <Navigate to="/auth" replace />} />
             <Route path="/admin" element={isAuthorized ? <AdminPage /> : <Navigate to="/auth" replace />} />

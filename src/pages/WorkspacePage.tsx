@@ -1,11 +1,10 @@
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 import WorkspaceCanvas, {
   type ActiveToolMode,
   type AnnotationObject,
-  type Area,
   type OpacityTargetMode,
-  type PolygonPoint,
   type WorkspaceModelItem
 } from '../components/WorkspaceCanvas';
 import {
@@ -17,7 +16,6 @@ import {
   type ModelConfig,
   type Project
 } from '../lib/api';
-import defaultCatsImage from '../../cats.jpg';
 
 interface ClassItem {
   name: string;
@@ -50,74 +48,13 @@ interface WorkspaceState {
 
 const STORAGE_KEY = 'seglabel-ai.workspace';
 
-const makeArea = (x: number, y: number, width: number, height: number): Area => ({
-  x,
-  y,
-  width,
-  height
-});
-
-const makePoints = (points: Array<[number, number]>): PolygonPoint[] =>
-  points.map(([x, y]) => ({ x, y }));
-
-const initialObjects: AnnotationObject[] = [
-  {
-    id: 1,
-    label: 'Kitten',
-    color: '#7CFC8A',
-    type: 'polygon',
-    source: 'imported',
-    points: makePoints([
-      [26, 56],
-      [98, 42],
-      [160, 66],
-      [188, 204],
-      [170, 356],
-      [182, 542],
-      [142, 676],
-      [64, 690],
-      [22, 610],
-      [16, 456],
-      [20, 258]
-    ]),
-    area: makeArea(16, 42, 172, 648)
-  },
-  {
-    id: 2,
-    label: 'Kitten',
-    color: '#7CFC8A',
-    type: 'box',
-    source: 'imported',
-    area: makeArea(276, 108, 186, 498)
-  },
-  {
-    id: 3,
-    label: 'Kitten',
-    color: '#7CFC8A',
-    type: 'box',
-    source: 'model',
-    modelName: 'YOLO World',
-    score: 0.94,
-    area: makeArea(470, 126, 182, 470)
-  },
-  {
-    id: 4,
-    label: 'Kitten',
-    color: '#7CFC8A',
-    type: 'box',
-    source: 'model',
-    modelName: 'Grounding DINO',
-    score: 0.92,
-    area: makeArea(660, 100, 212, 510)
-  }
-];
-
-const initialClasses: ClassItem[] = [
-  { name: 'Kitten', source: 'imported', color: '#7CFC8A', visible: true },
-  { name: 'Tail', source: 'manual', color: '#52b5ff', visible: true },
-  { name: 'Ear', source: 'manual', color: '#ffb454', visible: true },
-  { name: 'Background', source: 'model', color: '#ff8fb1', visible: false }
-];
+const EMPTY_IMAGE_ID = 'empty';
+const EMPTY_WORKSPACE_IMAGE: WorkspaceImage = {
+  id: EMPTY_IMAGE_ID,
+  name: 'Нет изображения',
+  src: '',
+  annotations: []
+};
 
 const cloneState = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 
@@ -139,46 +76,81 @@ const isUuid = (value: AnnotationObject['id']): value is string =>
 const createLocalAnnotationId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const getAnnotationApiType = (object: Pick<AnnotationObject, 'type'>): AnnotationPayload['type'] =>
-  object.type === 'box' ? 'detection' : 'segmentation';
-
-const normalizeModelName = (name: string) => name.trim().toLowerCase();
-
-const uniqueModelsByName = (models: ModelConfig[]) => {
-  const seen = new Set<string>();
-
-  return models.filter((model) => {
-    const key = normalizeModelName(model.name);
-
-    if (seen.has(key)) {
-      return false;
-    }
-
-    seen.add(key);
-    return true;
-  });
-};
+  object.type === 'box' ? 'detect' : 'segment';
 
 const serializeAnnotationObject = (object: AnnotationObject): AnnotationPayload => {
-  const { id: _id, ...objectData } = object;
+  const className = object.label.trim();
+  const data =
+    object.type === 'box' && object.area
+      ? [object.area.x, object.area.y, object.area.x + object.area.width, object.area.y + object.area.height]
+      : object.points?.map((point) => [point.x, point.y]) ?? [];
 
   return {
     type: getAnnotationApiType(object),
-    class_name: object.label,
-    data: {
-      version: 1,
-      object: objectData
-    }
+    class_name: className,
+    data
   };
 };
 
 const normalizeBackendType = (type: AnnotationResponse['type']) =>
   type === 'detect' ? 'detection' : type === 'segment' ? 'segmentation' : type;
 
+const isNumberArray = (value: unknown): value is number[] => Array.isArray(value) && value.every((item) => typeof item === 'number');
+
+const isPointArray = (value: unknown): value is Array<[number, number]> =>
+  Array.isArray(value) &&
+  value.every((item) => Array.isArray(item) && item.length >= 2 && typeof item[0] === 'number' && typeof item[1] === 'number');
+
+const getPointsBounds = (points: Array<{ x: number; y: number }>) => {
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+
+  return {
+    x: Math.min(...xs),
+    y: Math.min(...ys),
+    width: Math.max(...xs) - Math.min(...xs),
+    height: Math.max(...ys) - Math.min(...ys)
+  };
+};
+
 const annotationFromApi = (annotation: AnnotationResponse): AnnotationObject => {
-  const data = annotation.data && typeof annotation.data === 'object' ? (annotation.data as Record<string, unknown>) : {};
-  const objectData =
-    data.object && typeof data.object === 'object' ? (data.object as Partial<AnnotationObject>) : (data as Partial<AnnotationObject>);
   const backendType = normalizeBackendType(annotation.type);
+  const data = annotation.data;
+
+  if (isNumberArray(data) && data.length >= 4) {
+    return {
+      id: annotation.id,
+      label: annotation.class_name,
+      color: '#7CFC8A',
+      type: 'box',
+      source: 'manual',
+      area: {
+        x: data[0],
+        y: data[1],
+        width: data[2] - data[0],
+        height: data[3] - data[1]
+      }
+    };
+  }
+
+  if (isPointArray(data)) {
+    const points = data.map(([x, y]) => ({ x, y }));
+
+    return {
+      id: annotation.id,
+      label: annotation.class_name,
+      color: '#7CFC8A',
+      type: backendType === 'detection' ? 'box' : 'polygon',
+      source: 'manual',
+      points,
+      area: points.length ? getPointsBounds(points) : undefined
+    };
+  }
+
+  const dataRecord = data && typeof data === 'object' && !Array.isArray(data) ? (data as Record<string, unknown>) : null;
+  const objectData = (
+    dataRecord?.object && typeof dataRecord.object === 'object' ? dataRecord.object : dataRecord ?? {}
+  ) as Partial<AnnotationObject>;
 
   return {
     id: annotation.id,
@@ -217,27 +189,21 @@ const classItemFromApi = (classType: ClassType): ClassItem => ({
 });
 
 const buildInitialState = (): WorkspaceState => ({
-  projectName: 'Cat behavior dataset',
-  taskName: 'cats_sequence_12',
-  images: [
-    {
-      id: 1,
-      name: 'cats.jpg',
-      src: defaultCatsImage,
-      annotations: initialObjects
-    }
-  ],
+  projectName: 'Проект',
+  taskName: 'Нет изображения',
+  images: [EMPTY_WORKSPACE_IMAGE],
   currentImageIndex: 0,
-  selectedObjectId: 1,
-  classList: initialClasses,
-  activeTool: 'polygon',
-  activeLabel: 'Kitten',
+  selectedObjectId: null,
+  classList: [],
+  activeTool: null,
+  activeLabel: '',
   maskOpacity: 0.58,
-  selectedSegmentationModels: ['SAM 2'],
-  selectedDetectionModels: ['YOLO World']
+  selectedSegmentationModels: [],
+  selectedDetectionModels: []
 });
 
 const WorkspacePage = () => {
+  const { projectId } = useParams<{ projectId: string }>();
   const initialState = useMemo(buildInitialState, []);
   const [workspace, setWorkspace] = useState<WorkspaceState>(initialState);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -252,7 +218,7 @@ const WorkspacePage = () => {
   const [hasSavedDraft, setHasSavedDraft] = useState<boolean>(() => Boolean(localStorage.getItem(STORAGE_KEY)));
   const [opacityTargetMode, setOpacityTargetMode] = useState<OpacityTargetMode>('class');
   const [opacityClassName, setOpacityClassName] = useState(initialState.activeLabel);
-  const [analysisClassNames, setAnalysisClassNames] = useState<string[]>([initialState.activeLabel]);
+  const [analysisClassNames, setAnalysisClassNames] = useState<string[]>([]);
   const [history, setHistory] = useState<WorkspaceState[]>([cloneState(initialState)]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const historyRef = useRef<WorkspaceState[]>([cloneState(initialState)]);
@@ -260,7 +226,7 @@ const WorkspacePage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadedUrlsRef = useRef<string[]>([]);
 
-  const currentImage = workspace.images[workspace.currentImageIndex];
+  const currentImage = workspace.images[workspace.currentImageIndex] ?? EMPTY_WORKSPACE_IMAGE;
   const objects = currentImage?.annotations ?? [];
   const canPersistAnnotations = Boolean(selectedProjectId && currentImage && isUuid(currentImage.id));
 
@@ -293,11 +259,11 @@ const WorkspacePage = () => {
   }, [workspace.activeLabel, workspace.classList]);
 
   const segmentationModels = useMemo<WorkspaceModelItem[]>(
-    () => uniqueModelsByName(availableModels.filter((model) => model.type.includes('segmentation'))),
+    () => availableModels.filter((model) => model.type.includes('segmentation')),
     [availableModels]
   );
   const detectionModels = useMemo<WorkspaceModelItem[]>(
-    () => uniqueModelsByName(availableModels.filter((model) => model.type.includes('detection'))),
+    () => availableModels.filter((model) => model.type.includes('detection')),
     [availableModels]
   );
   const selectedModelIds = useMemo(
@@ -319,10 +285,10 @@ const WorkspacePage = () => {
       .listProjects()
       .then((items) => {
         setProjects(items);
-        setSelectedProjectId(items[0]?.id ?? '');
+        setSelectedProjectId(projectId ?? items[0]?.id ?? '');
       })
       .catch((err) => setStatusMessage(err instanceof Error ? err.message : 'Не удалось загрузить проекты'));
-  }, []);
+  }, [projectId]);
 
   useEffect(() => {
     if (!selectedProjectId) {
@@ -365,41 +331,29 @@ const WorkspacePage = () => {
           return;
         }
 
+        const classList = [
+          ...projectClasses.map(classItemFromApi),
+          ...Array.from(new Set(remoteImages.flatMap((image) => image.annotations.map((item) => item.label))))
+            .filter((name) => !projectClasses.some((classType) => classType.name_eng === name || classType.name_ru === name))
+            .map<ClassItem>((name) => ({
+              name,
+              source: 'imported',
+              color: '#7CFC8A',
+              visible: true
+            }))
+        ];
+        const activeLabel =
+          remoteImages[0]?.annotations[0]?.label ?? projectClasses[0]?.name_eng ?? projectClasses[0]?.name_ru ?? '';
+
         const nextState: WorkspaceState = {
           ...buildInitialState(),
           projectName: project?.name ?? 'Проект',
           taskName: remoteImages[0]?.name.replace(/\.[^.]+$/, '') ?? 'Нет изображений',
-          images: remoteImages.length
-            ? remoteImages
-            : [
-                {
-                  id: 'empty',
-                  name: 'Нет изображений',
-                  src: defaultCatsImage,
-                  annotations: []
-                }
-              ],
+          images: remoteImages.length ? remoteImages : [EMPTY_WORKSPACE_IMAGE],
           currentImageIndex: 0,
           selectedObjectId: null,
-          classList: remoteImages.length
-            ? [
-                ...projectClasses.map(classItemFromApi),
-                ...Array.from(new Set(remoteImages.flatMap((image) => image.annotations.map((item) => item.label))))
-                  .filter((name) => !projectClasses.some((classType) => classType.name_eng === name || classType.name_ru === name))
-                  .map<ClassItem>((name) => ({
-                    name,
-                    source: 'imported',
-                    color: '#7CFC8A',
-                    visible: true
-                  })),
-                ...(projectClasses.length ? [] : [{ name: 'Object', source: 'manual' as const, color: '#52b5ff', visible: true }])
-              ]
-            : initialClasses,
-          activeLabel:
-            remoteImages[0]?.annotations[0]?.label ??
-            projectClasses[0]?.name_eng ??
-            projectClasses[0]?.name_ru ??
-            (remoteImages.length ? 'Object' : 'Kitten'),
+          classList,
+          activeLabel,
           selectedSegmentationModels: projectModels
             .filter((model) => model.type.includes('segmentation'))
             .slice(0, 1)
@@ -555,10 +509,54 @@ const WorkspacePage = () => {
     setStatusMessage('Проект экспортирован в JSON');
   };
 
-  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
 
     if (!files.length) {
+      return;
+    }
+
+    if (selectedProjectId) {
+      setIsLoadingRemoteImages(true);
+      setStatusMessage(`Загружаем изображений в backend: ${files.length}`);
+
+      try {
+        const uploaded = await api.uploadImages(selectedProjectId, files);
+        const remoteImages = await Promise.all(
+          uploaded.map(async (item, index) => {
+            const src = await api.getImageObjectUrl(selectedProjectId, item.id);
+            uploadedUrlsRef.current.push(src);
+
+            return {
+              id: item.id,
+              name: item.file_path?.split('/').pop() ?? files[index]?.name ?? `${index + 1}.${item.format ?? 'jpg'}`,
+              src,
+              annotations: annotationsFromRecord(item.annotations)
+            } satisfies WorkspaceImage;
+          })
+        );
+
+        updateWorkspace(
+          (current) => {
+            const existingImages = current.images.filter((image) => image.id !== EMPTY_IMAGE_ID);
+
+            return {
+              ...current,
+              images: [...existingImages, ...remoteImages],
+              currentImageIndex: existingImages.length,
+              taskName: files[0].name.replace(/\.[^.]+$/, ''),
+              selectedObjectId: null
+            };
+          },
+          { status: `Backend загрузил изображений: ${remoteImages.length}` }
+        );
+      } catch (err) {
+        setStatusMessage(err instanceof Error ? `Не удалось загрузить изображения в backend: ${err.message}` : 'Не удалось загрузить изображения в backend');
+      } finally {
+        setIsLoadingRemoteImages(false);
+        event.target.value = '';
+      }
+
       return;
     }
 
@@ -575,13 +573,17 @@ const WorkspacePage = () => {
     });
 
     updateWorkspace(
-      (current) => ({
-        ...current,
-        images: [...current.images, ...nextImages],
-        currentImageIndex: current.images.length,
-        taskName: files[0].name.replace(/\.[^.]+$/, ''),
-        selectedObjectId: null
-      }),
+      (current) => {
+        const existingImages = current.images.filter((image) => image.id !== EMPTY_IMAGE_ID);
+
+        return {
+          ...current,
+          images: [...existingImages, ...nextImages],
+          currentImageIndex: existingImages.length,
+          taskName: files[0].name.replace(/\.[^.]+$/, ''),
+          selectedObjectId: null
+        };
+      },
       { status: `Добавлено изображений: ${files.length}` }
     );
 
@@ -643,6 +645,11 @@ const WorkspacePage = () => {
   };
 
   const createObject = (object: Omit<AnnotationObject, 'id'>) => {
+    if (!object.label.trim()) {
+      setStatusMessage('Сначала добавьте и выберите класс');
+      return;
+    }
+
     const imageForRequest = currentImage;
     const localId = createLocalAnnotationId();
     const shouldPersist = Boolean(selectedProjectId && imageForRequest && isUuid(imageForRequest.id));
@@ -889,7 +896,7 @@ const WorkspacePage = () => {
     );
   };
 
-  const addClass = () => {
+  const addClass = async () => {
     const value = newClassName.trim();
 
     if (!value) {
@@ -899,6 +906,35 @@ const WorkspacePage = () => {
 
     if (workspace.classList.some((item) => item.name.toLowerCase() === value.toLowerCase())) {
       setStatusMessage('Такой класс уже существует');
+      return;
+    }
+
+    if (selectedProjectId) {
+      setStatusMessage(`Сохраняем класс ${value} на сервере...`);
+
+      try {
+        const createdClass = await api.createProjectClass(selectedProjectId, value);
+        const classItem = classItemFromApi(createdClass);
+
+        setAvailableClasses((current) =>
+          current.some((item) => item.id === createdClass.id) ? current : [...current, createdClass]
+        );
+        updateWorkspace(
+          (current) => ({
+            ...current,
+            classList: current.classList.some((item) => item.name.toLowerCase() === classItem.name.toLowerCase())
+              ? current.classList
+              : [...current.classList, classItem],
+            activeLabel: classItem.name
+          }),
+          { status: `Класс ${classItem.name} добавлен на сервер` }
+        );
+        setAnalysisClassNames((current) => (current.includes(classItem.name) ? current : [...current, classItem.name]));
+        setNewClassName('');
+      } catch (err) {
+        setStatusMessage(err instanceof Error ? `Не удалось добавить класс на сервер: ${err.message}` : 'Не удалось добавить класс на сервер');
+      }
+
       return;
     }
 
@@ -936,13 +972,13 @@ const WorkspacePage = () => {
     );
   };
 
-  const handleRunModels = () => {
+  const handleRunModels = async () => {
     const selectedClassNames = analysisClassNames.length ? analysisClassNames : [];
     const activeModelNames = availableModels
       .filter((model) => selectedModelIds.includes(model.id))
       .map((model) => model.name);
     const selectedModelId = selectedModelIds[0];
-    const classTypeIds = availableClasses
+    let classTypeIds = availableClasses
       .filter((classType) => {
         const className = classType.name_eng || classType.name_ru;
         return selectedClassNames.includes(className);
@@ -970,6 +1006,9 @@ const WorkspacePage = () => {
     setStatusMessage(`Подключаем WebSocket анализа: ${activeModelNames.join(', ')}; классы: ${selectedClassNames.join(', ')}`);
 
     const handleAnalysisMessage = (message: AnalysisSocketMessage) => {
+      if (message.type === 'subscribed') {
+        setStatusMessage('WebSocket подключён, запускаем анализ...');
+      }
       if (message.type === 'task_created') {
         setStatusMessage(`Задача анализа создана: ${(message as { task_id: string }).task_id}`);
       }
@@ -979,15 +1018,44 @@ const WorkspacePage = () => {
       }
     };
 
-    api
-      .startAnalysisViaWebSocket({
+    try {
+      if (classTypeIds.length !== selectedClassNames.length) {
+        setStatusMessage('Синхронизируем классы проекта перед анализом...');
+        await Promise.all(selectedClassNames.map((name) => ensureRemoteClass(selectedProjectId, name)));
+        const refreshedClasses = await api.getProjectClasses(selectedProjectId);
+        setAvailableClasses(refreshedClasses);
+        classTypeIds = refreshedClasses
+          .filter((classType) => selectedClassNames.includes(classType.name_eng || classType.name_ru))
+          .map((classType) => classType.id);
+      }
+
+      await api.startAnalysisViaWebSocket({
         imageId: currentImageId,
         modelConfigId: selectedModelId,
         classTypeIds,
         onMessage: handleAnalysisMessage
-      })
-      .then(() => api.getAnnotations(selectedProjectId, currentImageId))
-      .then((annotations) => {
+      });
+
+      const annotations = await api.getAnnotations(selectedProjectId, currentImageId);
+      const generated = annotations.map(annotationFromApi);
+
+      updateWorkspace(
+        (current) => ({
+          ...current,
+          images: current.images.map((image, index) =>
+            index === current.currentImageIndex
+              ? { ...image, annotations: mergeAnnotationObjects(generated, image.annotations) }
+              : image
+          ),
+          selectedObjectId: generated[0]?.id ?? current.selectedObjectId
+        }),
+        { status: `WebSocket анализ завершён, аннотаций: ${generated.length}` }
+      );
+    } catch (err) {
+      setStatusMessage(err instanceof Error ? `WebSocket не прошёл, пробуем REST: ${err.message}` : 'WebSocket не прошёл, пробуем REST');
+
+      try {
+        const annotations = await api.runModels(selectedProjectId, currentImageId, selectedModelIds, selectedClassNames[0]);
         const generated = annotations.map(annotationFromApi);
 
         updateWorkspace(
@@ -1000,36 +1068,16 @@ const WorkspacePage = () => {
             ),
             selectedObjectId: generated[0]?.id ?? current.selectedObjectId
           }),
-          { status: `Модели вернули авторазметку: ${generated.length}` }
+          { status: `REST fallback вернул авторазметку: ${generated.length}` }
         );
-      })
-      .catch((err) => {
-        setStatusMessage(err instanceof Error ? `WebSocket не прошёл, пробуем REST: ${err.message}` : 'WebSocket не прошёл, пробуем REST');
-        return api
-          .runModels(selectedProjectId, currentImageId, selectedModelIds, selectedClassNames[0])
-          .then((annotations) => {
-            const generated = annotations.map(annotationFromApi);
-
-            updateWorkspace(
-              (current) => ({
-                ...current,
-                images: current.images.map((image, index) =>
-                  index === current.currentImageIndex
-                    ? { ...image, annotations: mergeAnnotationObjects(generated, image.annotations) }
-                    : image
-                ),
-                selectedObjectId: generated[0]?.id ?? current.selectedObjectId
-              }),
-              { status: `REST fallback вернул авторазметку: ${generated.length}` }
-            );
-          })
-          .catch((fallbackErr) =>
-            setStatusMessage(
-              fallbackErr instanceof Error ? `Не удалось запустить модели: ${fallbackErr.message}` : 'Не удалось запустить модели'
-            )
-          );
-      })
-      .finally(() => setIsRunningModels(false));
+      } catch (fallbackErr) {
+        setStatusMessage(
+          fallbackErr instanceof Error ? `Не удалось запустить модели: ${fallbackErr.message}` : 'Не удалось запустить модели'
+        );
+      }
+    } finally {
+      setIsRunningModels(false);
+    }
   };
 
   return (
@@ -1079,7 +1127,7 @@ const WorkspacePage = () => {
               compareRightSource="Manual"
               classList={workspace.classList}
               newClassName={newClassName}
-              imageName={currentImage.name}
+              imageName={isLoadingRemoteImages ? 'Загрузка...' : currentImage.name}
               imageSrc={currentImage.src}
               imageIndex={workspace.currentImageIndex}
               imageCount={workspace.images.length}

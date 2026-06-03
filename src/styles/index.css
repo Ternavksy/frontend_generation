@@ -7,12 +7,13 @@
   --top-nav-height: 60px;
 }
 
-html, body {
-  min-height: 100%;
+html, body, #root {
+  height: 100%;
 }
 
 body {
   @apply bg-slate-950 text-slate-100 antialiased;
+  overflow: hidden;
 }
 
 button, input, textarea, select {
@@ -39,15 +40,28 @@ button, input, textarea, select {
 }
 
 /* Кастомный скролл для правой панели */
+.app-scroll,
 .custom-scroll {
   scrollbar-width: thin;
   scrollbar-color: #334155 #0f172a;
 }
+.app-scroll::-webkit-scrollbar,
 .custom-scroll::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+  height: 10px;
   background: #0f172a;
 }
+.app-scroll::-webkit-scrollbar-thumb,
 .custom-scroll::-webkit-scrollbar-thumb {
   background: #334155;
-  border-radius: 6px;
+  border: 2px solid #0f172a;
+  border-radius: 999px;
+}
+.app-scroll::-webkit-scrollbar-thumb:hover,
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+.app-scroll::-webkit-scrollbar-corner,
+.custom-scroll::-webkit-scrollbar-corner {
+  background: #0f172a;
 }

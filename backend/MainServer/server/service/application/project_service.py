@@ -4,7 +4,7 @@ import logging
 from typing import List
 from uuid import UUID
 from fastapi import HTTPException, status
-from sqlalchemy import delete, select
+from sqlalchemy import delete, insert, select
 from sqlalchemy.exc import IntegrityError
 
 from server.service.dal.repositories import ProjectRepository, CacheObjectClassesRepository, ClassTypeRepository, UserRepository, AnnotationRepository, MaskRepository
@@ -137,7 +137,11 @@ class ProjectService:
         if await ProjectRepository.is_user_member(db, target_user.id, project_id):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Пользователь уже участник проекта")
 
-        # SQLAlchemy автоматически вставит запись в project_user_table
-        project.members.append(target_user)
+        await db.execute(
+            insert(project_user_table).values(
+                user_by_id=target_user.id,
+                project_by_id=project_id
+            )
+        )
         await db.commit()
         return {"detail": f"Пользователь {target_user.login} успешно добавлен"}

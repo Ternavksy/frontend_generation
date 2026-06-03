@@ -637,3 +637,995 @@ Traceback (most recent call last):
     raise uh.exc.InternalBackendError(
 passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passlib recommends running `pip install bcrypt` for general bcrypt support.(config=<hash <class 'str'> value omitted>, secret=<hash <class 'bytes'> value omitted>)
 2026-05-29 15:29:13,306 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
+2026-06-02 10:09:47,364 - passlib.handlers.bcrypt - DEBUG - trapped unexpected response from 'os_crypt' backend: verify('test', b'$2$04$5BJqKfqMQvV7nS.yUguNcuRfMMOXK0xPWavM7pOzjEi5ze5T1k8/S'):
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 303, in safe_verify
+    return verify(secret, hash)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 837, in _calc_checksum
+    raise uh.exc.InternalBackendError(
+passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passlib recommends running `pip install bcrypt` for general bcrypt support.(config=<hash <class 'str'> value omitted>, secret=<hash <class 'bytes'> value omitted>)
+2026-06-02 10:09:47,368 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
+2026-06-02 10:09:47,622 - AuthUserService - INFO - Пользователь ws_check_1780394987 зарегистрирован
+2026-06-02 10:09:48,557 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 10:09:48,557 - python_multipart.multipart - DEBUG - Calling on_header_field with data[36:55]
+2026-06-02 10:09:48,558 - python_multipart.multipart - DEBUG - Calling on_header_value with data[57:88]
+2026-06-02 10:09:48,559 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:09:48,559 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 10:09:48,559 - python_multipart.multipart - DEBUG - Calling on_part_data with data[92:172]
+2026-06-02 10:09:48,560 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 10:09:48,560 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 10:09:48,560 - python_multipart.multipart - DEBUG - Calling on_header_field with data[210:229]
+2026-06-02 10:09:48,560 - python_multipart.multipart - DEBUG - Calling on_header_value with data[231:284]
+2026-06-02 10:09:48,560 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:09:48,561 - python_multipart.multipart - DEBUG - Calling on_header_field with data[286:298]
+2026-06-02 10:09:48,561 - python_multipart.multipart - DEBUG - Calling on_header_value with data[300:310]
+2026-06-02 10:09:48,561 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:09:48,561 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 10:09:48,563 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:425]
+2026-06-02 10:09:48,563 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:58439]
+2026-06-02 10:09:48,564 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8570]
+2026-06-02 10:09:48,564 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5015]
+2026-06-02 10:09:48,564 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4964]
+2026-06-02 10:09:48,565 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4814]
+2026-06-02 10:09:48,565 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:2978]
+2026-06-02 10:09:48,565 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7029]
+2026-06-02 10:09:48,566 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5364]
+2026-06-02 10:09:48,566 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6430]
+2026-06-02 10:09:48,566 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5257]
+2026-06-02 10:09:48,567 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4599]
+2026-06-02 10:09:48,567 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5352]
+2026-06-02 10:09:48,567 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3602]
+2026-06-02 10:09:48,568 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5950]
+2026-06-02 10:09:48,568 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4135]
+2026-06-02 10:09:48,568 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:2169]
+2026-06-02 10:09:48,568 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3421]
+2026-06-02 10:09:48,569 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5122]
+2026-06-02 10:09:48,569 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4334]
+2026-06-02 10:09:48,569 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3871]
+2026-06-02 10:09:48,569 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7252]
+2026-06-02 10:09:48,570 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:10223]
+2026-06-02 10:09:48,570 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4546]
+2026-06-02 10:09:48,570 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5412]
+2026-06-02 10:09:48,571 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6699]
+2026-06-02 10:09:48,571 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3209]
+2026-06-02 10:09:48,571 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5808]
+2026-06-02 10:09:48,572 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:2953]
+2026-06-02 10:09:48,573 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3993]
+2026-06-02 10:09:48,575 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:14727]
+2026-06-02 10:09:48,578 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7726]
+2026-06-02 10:09:48,603 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:25300]
+2026-06-02 10:09:48,603 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:22091]
+2026-06-02 10:09:48,605 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8461]
+2026-06-02 10:09:48,606 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:23338]
+2026-06-02 10:09:48,606 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6323]
+2026-06-02 10:09:48,607 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8228]
+2026-06-02 10:09:48,607 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:11191]
+2026-06-02 10:09:48,607 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5979]
+2026-06-02 10:09:48,607 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5069]
+2026-06-02 10:09:48,608 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5828]
+2026-06-02 10:09:48,608 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4019]
+2026-06-02 10:09:48,608 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4819]
+2026-06-02 10:09:48,608 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:2619]
+2026-06-02 10:09:48,609 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3621]
+2026-06-02 10:09:48,609 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5063]
+2026-06-02 10:09:48,610 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5079]
+2026-06-02 10:09:48,610 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5479]
+2026-06-02 10:09:48,610 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5290]
+2026-06-02 10:09:48,611 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4316]
+2026-06-02 10:09:48,611 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3388]
+2026-06-02 10:09:48,612 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6920]
+2026-06-02 10:09:48,620 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8566]
+2026-06-02 10:09:48,622 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:24517]
+2026-06-02 10:09:48,623 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:43380]
+2026-06-02 10:09:48,623 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:13160]
+2026-06-02 10:09:48,624 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6374]
+2026-06-02 10:09:48,624 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5818]
+2026-06-02 10:09:48,624 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7646]
+2026-06-02 10:09:48,625 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8583]
+2026-06-02 10:09:48,625 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6589]
+2026-06-02 10:09:48,625 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8645]
+2026-06-02 10:09:48,626 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6395]
+2026-06-02 10:09:48,630 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6753]
+2026-06-02 10:09:48,631 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:40598]
+2026-06-02 10:09:48,631 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:11536]
+2026-06-02 10:09:48,632 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7971]
+2026-06-02 10:09:48,632 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8191]
+2026-06-02 10:09:48,633 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4806]
+2026-06-02 10:09:48,633 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5840]
+2026-06-02 10:09:48,633 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3448]
+2026-06-02 10:09:48,633 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6047]
+2026-06-02 10:09:48,634 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4838]
+2026-06-02 10:09:48,634 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5735]
+2026-06-02 10:09:48,635 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3677]
+2026-06-02 10:09:48,635 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3639]
+2026-06-02 10:09:48,635 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7277]
+2026-06-02 10:09:48,636 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5014]
+2026-06-02 10:09:48,636 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6575]
+2026-06-02 10:09:48,636 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6271]
+2026-06-02 10:09:48,637 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5145]
+2026-06-02 10:09:48,637 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7697]
+2026-06-02 10:09:48,638 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7427]
+2026-06-02 10:09:48,638 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7127]
+2026-06-02 10:09:48,638 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4262]
+2026-06-02 10:09:48,639 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4604]
+2026-06-02 10:09:48,639 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4851]
+2026-06-02 10:09:48,639 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4088]
+2026-06-02 10:09:48,639 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3903]
+2026-06-02 10:09:48,640 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6750]
+2026-06-02 10:09:48,640 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5236]
+2026-06-02 10:09:48,640 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5147]
+2026-06-02 10:09:48,640 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3597]
+2026-06-02 10:09:48,641 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3774]
+2026-06-02 10:09:48,641 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3962]
+2026-06-02 10:09:48,641 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3988]
+2026-06-02 10:09:48,641 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:2883]
+2026-06-02 10:09:48,642 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4840]
+2026-06-02 10:09:48,642 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5793]
+2026-06-02 10:09:48,643 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:11976]
+2026-06-02 10:09:48,643 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3675]
+2026-06-02 10:09:48,643 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3834]
+2026-06-02 10:09:48,643 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3264]
+2026-06-02 10:09:48,644 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3687]
+2026-06-02 10:09:48,644 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:10982]
+2026-06-02 10:09:48,644 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6491]
+2026-06-02 10:09:48,645 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5092]
+2026-06-02 10:09:48,645 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4848]
+2026-06-02 10:09:48,645 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:2931]
+2026-06-02 10:09:48,645 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4349]
+2026-06-02 10:09:48,645 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5541]
+2026-06-02 10:09:48,646 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4910]
+2026-06-02 10:09:48,647 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5094]
+2026-06-02 10:09:48,647 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6269]
+2026-06-02 10:09:48,647 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:10677]
+2026-06-02 10:09:48,648 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8248]
+2026-06-02 10:09:48,648 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5094]
+2026-06-02 10:09:48,648 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6113]
+2026-06-02 10:09:48,649 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3744]
+2026-06-02 10:09:48,649 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4868]
+2026-06-02 10:09:48,649 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5765]
+2026-06-02 10:09:48,650 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5497]
+2026-06-02 10:09:48,650 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8387]
+2026-06-02 10:09:48,650 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4432]
+2026-06-02 10:09:48,651 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5237]
+2026-06-02 10:09:48,651 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4881]
+2026-06-02 10:09:48,651 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6668]
+2026-06-02 10:09:48,651 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3490]
+2026-06-02 10:09:48,652 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5873]
+2026-06-02 10:09:48,652 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6093]
+2026-06-02 10:09:48,652 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7901]
+2026-06-02 10:09:48,653 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4140]
+2026-06-02 10:09:48,653 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:2448]
+2026-06-02 10:09:48,653 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7044]
+2026-06-02 10:09:48,653 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4014]
+2026-06-02 10:09:48,654 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3518]
+2026-06-02 10:09:48,654 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4066]
+2026-06-02 10:09:48,654 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4135]
+2026-06-02 10:09:48,654 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4378]
+2026-06-02 10:09:48,655 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6475]
+2026-06-02 10:09:48,655 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:2564]
+2026-06-02 10:09:48,655 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4010]
+2026-06-02 10:09:48,655 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5748]
+2026-06-02 10:09:48,655 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3077]
+2026-06-02 10:09:48,656 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4649]
+2026-06-02 10:09:48,656 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:1896]
+2026-06-02 10:09:48,656 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5473]
+2026-06-02 10:09:48,656 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:2840]
+2026-06-02 10:09:48,657 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3904]
+2026-06-02 10:09:48,657 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5936]
+2026-06-02 10:09:48,657 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:2170]
+2026-06-02 10:09:48,657 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5235]
+2026-06-02 10:09:48,658 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3748]
+2026-06-02 10:09:48,658 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5550]
+2026-06-02 10:09:48,661 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:43656]
+2026-06-02 10:09:48,662 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5590]
+2026-06-02 10:09:48,662 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7615]
+2026-06-02 10:09:48,663 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:10138]
+2026-06-02 10:09:48,664 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:11174]
+2026-06-02 10:09:48,664 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:10110]
+2026-06-02 10:09:48,664 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4495]
+2026-06-02 10:09:48,665 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:10714]
+2026-06-02 10:09:48,665 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7528]
+2026-06-02 10:09:48,666 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6486]
+2026-06-02 10:09:48,666 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7204]
+2026-06-02 10:09:48,667 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7445]
+2026-06-02 10:09:48,667 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6822]
+2026-06-02 10:09:48,667 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7639]
+2026-06-02 10:09:48,668 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6188]
+2026-06-02 10:09:48,668 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:9356]
+2026-06-02 10:09:48,669 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7063]
+2026-06-02 10:09:48,669 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:10918]
+2026-06-02 10:09:48,669 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4485]
+2026-06-02 10:09:48,670 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8228]
+2026-06-02 10:09:48,670 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:4992]
+2026-06-02 10:09:48,670 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7378]
+2026-06-02 10:09:48,671 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:9368]
+2026-06-02 10:09:48,671 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5622]
+2026-06-02 10:09:48,672 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7214]
+2026-06-02 10:09:48,672 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5140]
+2026-06-02 10:09:48,673 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7287]
+2026-06-02 10:09:48,673 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7258]
+2026-06-02 10:09:48,674 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8009]
+2026-06-02 10:09:48,674 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7072]
+2026-06-02 10:09:48,674 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7499]
+2026-06-02 10:09:48,675 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7600]
+2026-06-02 10:09:48,675 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8391]
+2026-06-02 10:09:48,675 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5371]
+2026-06-02 10:09:48,676 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:3528]
+2026-06-02 10:09:48,676 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5923]
+2026-06-02 10:09:48,677 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6504]
+2026-06-02 10:09:48,677 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:10080]
+2026-06-02 10:09:48,677 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:10073]
+2026-06-02 10:09:48,678 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:10417]
+2026-06-02 10:09:48,678 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:9357]
+2026-06-02 10:09:48,679 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7160]
+2026-06-02 10:09:48,680 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:8657]
+2026-06-02 10:09:48,680 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7721]
+2026-06-02 10:09:48,681 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:7869]
+2026-06-02 10:09:48,681 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6486]
+2026-06-02 10:09:48,682 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5527]
+2026-06-02 10:09:48,682 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:9285]
+2026-06-02 10:09:48,683 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:5027]
+2026-06-02 10:09:48,683 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:6196]
+2026-06-02 10:09:48,683 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:11088]
+2026-06-02 10:09:48,684 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:183]
+2026-06-02 10:09:48,684 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 10:09:48,684 - python_multipart.multipart - DEBUG - Calling on_end with no data
+2026-06-02 10:09:48,934 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket connected: user=a6dc7a9d-bcd8-483e-a643-c2f98ac6d65f, session=cdd0bcf7-9c7c-476c-b273-1b7fce6c59d2, image=None
+2026-06-02 10:09:49,376 - AnalyzeRouter - INFO - WebSocket disconnected: session=cdd0bcf7-9c7c-476c-b273-1b7fce6c59d2
+2026-06-02 10:09:49,376 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket disconnected: session=cdd0bcf7-9c7c-476c-b273-1b7fce6c59d2
+2026-06-02 10:14:33,366 - AuthUserService - DEBUG - Не найден refresh токен
+2026-06-02 10:14:33,374 - AuthUserService - DEBUG - Не найден refresh токен
+2026-06-02 10:17:10,909 - AuthUserService - INFO - Пользователь vite_proxy_1780395430524 зарегистрирован
+2026-06-02 10:17:11,798 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 10:17:11,798 - python_multipart.multipart - DEBUG - Calling on_header_field with data[36:55]
+2026-06-02 10:17:11,798 - python_multipart.multipart - DEBUG - Calling on_header_value with data[57:88]
+2026-06-02 10:17:11,798 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:17:11,798 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 10:17:11,799 - python_multipart.multipart - DEBUG - Calling on_part_data with data[92:161]
+2026-06-02 10:17:11,799 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 10:17:11,799 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 10:17:11,799 - python_multipart.multipart - DEBUG - Calling on_header_field with data[199:218]
+2026-06-02 10:17:11,799 - python_multipart.multipart - DEBUG - Calling on_header_value with data[220:264]
+2026-06-02 10:17:11,799 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:17:11,799 - python_multipart.multipart - DEBUG - Calling on_header_field with data[266:278]
+2026-06-02 10:17:11,799 - python_multipart.multipart - DEBUG - Calling on_header_value with data[280:290]
+2026-06-02 10:17:11,799 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:17:11,800 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 10:17:11,800 - python_multipart.multipart - DEBUG - Calling on_part_data with data[294:298]
+2026-06-02 10:17:11,800 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 10:17:11,800 - python_multipart.multipart - DEBUG - Calling on_end with no data
+2026-06-02 10:17:11,868 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket connected: user=07b8412f-6033-44d0-a302-e662520c303b, session=43a902f4-e803-4d33-a24d-64aafe58d5a7, image=None
+2026-06-02 10:17:12,216 - AnalyzeRouter - INFO - WebSocket disconnected: session=43a902f4-e803-4d33-a24d-64aafe58d5a7
+2026-06-02 10:17:12,216 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket disconnected: session=43a902f4-e803-4d33-a24d-64aafe58d5a7
+2026-06-02 10:23:53,932 - AuthUserService - INFO - Пользователь scroll_check_1780395833494 зарегистрирован
+2026-06-02 10:24:41,459 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 10:24:41,460 - python_multipart.multipart - DEBUG - Calling on_header_field with data[36:55]
+2026-06-02 10:24:41,461 - python_multipart.multipart - DEBUG - Calling on_header_value with data[57:88]
+2026-06-02 10:24:41,461 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:24:41,461 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 10:24:41,461 - python_multipart.multipart - DEBUG - Calling on_part_data with data[92:161]
+2026-06-02 10:24:41,461 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 10:24:41,461 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 10:24:41,461 - python_multipart.multipart - DEBUG - Calling on_header_field with data[199:218]
+2026-06-02 10:24:41,462 - python_multipart.multipart - DEBUG - Calling on_header_value with data[220:264]
+2026-06-02 10:24:41,462 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:24:41,462 - python_multipart.multipart - DEBUG - Calling on_header_field with data[266:278]
+2026-06-02 10:24:41,462 - python_multipart.multipart - DEBUG - Calling on_header_value with data[280:290]
+2026-06-02 10:24:41,463 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:24:41,463 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 10:24:41,464 - python_multipart.multipart - DEBUG - Calling on_part_data with data[294:298]
+2026-06-02 10:24:41,464 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 10:24:41,464 - python_multipart.multipart - DEBUG - Calling on_end with no data
+2026-06-02 10:25:03,133 - ImageRouter - INFO - Загрузка изображений для проекта 96e941dd-c663-483c-ac6a-8edfbeaab6f0
+2026-06-02 10:25:03,182 - ImageRouter - INFO - Загрузка изображений для проекта 96e941dd-c663-483c-ac6a-8edfbeaab6f0
+2026-06-02 10:25:37,969 - ImageRouter - INFO - Загрузка изображений для проекта 96e941dd-c663-483c-ac6a-8edfbeaab6f0
+2026-06-02 10:25:37,992 - ImageRouter - INFO - Загрузка изображений для проекта 96e941dd-c663-483c-ac6a-8edfbeaab6f0
+2026-06-02 10:28:34,149 - ImageRouter - INFO - Загрузка изображений для проекта 96e941dd-c663-483c-ac6a-8edfbeaab6f0
+2026-06-02 10:28:34,209 - ImageRouter - INFO - Загрузка изображений для проекта 96e941dd-c663-483c-ac6a-8edfbeaab6f0
+2026-06-02 10:29:00,449 - ImageRouter - INFO - Загрузка изображений для проекта 96e941dd-c663-483c-ac6a-8edfbeaab6f0
+2026-06-02 10:29:09,750 - ImageRouter - INFO - Загрузка изображений для проекта 96e941dd-c663-483c-ac6a-8edfbeaab6f0
+2026-06-02 10:29:09,783 - ImageRouter - INFO - Загрузка изображений для проекта 96e941dd-c663-483c-ac6a-8edfbeaab6f0
+2026-06-02 10:32:36,388 - AuthUserService - INFO - Пользователь codex_owner_20260602 зарегистрирован
+2026-06-02 10:32:36,628 - AuthUserService - INFO - Пользователь codex_member_20260602 зарегистрирован
+2026-06-02 10:34:15,815 - passlib.handlers.bcrypt - DEBUG - trapped unexpected response from 'os_crypt' backend: verify('test', b'$2$04$5BJqKfqMQvV7nS.yUguNcuRfMMOXK0xPWavM7pOzjEi5ze5T1k8/S'):
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 303, in safe_verify
+    return verify(secret, hash)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 837, in _calc_checksum
+    raise uh.exc.InternalBackendError(
+passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passlib recommends running `pip install bcrypt` for general bcrypt support.(config=<hash <class 'str'> value omitted>, secret=<hash <class 'bytes'> value omitted>)
+2026-06-02 10:34:15,821 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
+2026-06-02 10:35:14,734 - ImageRouter - INFO - Загрузка изображений для проекта 96e941dd-c663-483c-ac6a-8edfbeaab6f0
+2026-06-02 10:35:14,799 - ImageRouter - INFO - Загрузка изображений для проекта 96e941dd-c663-483c-ac6a-8edfbeaab6f0
+2026-06-02 10:49:29,890 - AuthUserService - INFO - Пользователь ws_check_1780397369386 зарегистрирован
+2026-06-02 10:49:31,331 - hpack.hpack - DEBUG - HPACK encoding <generator object _check_path_header.<locals>.inner at 0xffff694d8c80>
+2026-06-02 10:49:31,338 - hpack.hpack - DEBUG - Adding (b':method', b'GET') to the header table
+2026-06-02 10:49:31,338 - hpack.hpack - DEBUG - Encoding 2 with 7 bits
+2026-06-02 10:49:31,338 - hpack.hpack - DEBUG - Adding (b':authority', b'translate.googleapis.com') to the header table
+2026-06-02 10:49:31,338 - hpack.hpack - DEBUG - Encoding 1 with 6 bits
+2026-06-02 10:49:31,339 - hpack.hpack - DEBUG - Encoding 17 with 7 bits
+2026-06-02 10:49:31,339 - hpack.hpack - DEBUG - Adding (b':scheme', b'https') to the header table
+2026-06-02 10:49:31,339 - hpack.hpack - DEBUG - Encoding 7 with 7 bits
+2026-06-02 10:49:31,339 - hpack.hpack - DEBUG - Adding (b':path', b'/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=cat') to the header table
+2026-06-02 10:49:31,339 - hpack.hpack - DEBUG - Encoding 4 with 6 bits
+2026-06-02 10:49:31,339 - hpack.hpack - DEBUG - Encoding 121 with 7 bits
+2026-06-02 10:49:31,339 - hpack.hpack - DEBUG - Adding (b'accept', b'*/*') to the header table
+2026-06-02 10:49:31,339 - hpack.hpack - DEBUG - Encoding 19 with 6 bits
+2026-06-02 10:49:31,340 - hpack.hpack - DEBUG - Encoding 3 with 7 bits
+2026-06-02 10:49:31,340 - hpack.hpack - DEBUG - Adding (b'accept-encoding', b'gzip, deflate') to the header table
+2026-06-02 10:49:31,340 - hpack.hpack - DEBUG - Encoding 16 with 7 bits
+2026-06-02 10:49:31,340 - hpack.hpack - DEBUG - Adding (b'user-agent', b'Mozilla/5.0 (Windows NT 10.0; Win64; x64)') to the header table
+2026-06-02 10:49:31,340 - hpack.hpack - DEBUG - Encoding 58 with 6 bits
+2026-06-02 10:49:31,340 - hpack.hpack - DEBUG - Encoding 32 with 7 bits
+2026-06-02 10:49:31,340 - hpack.hpack - DEBUG - Encoded header block to b"\x82A\x91M\x83\xa9\x14\r%^c\x9ej\n:\xcc\x85\xc8z\x7f\x87D\xf9a6\x0e\xa4P4\x96!\xb0\x83U5\x05\xff\tA\x8bR`\x99>~\x11D\x05\xab\xe14Ae\xbf\x13\xd1\x05\x96\xfcH\x98\x06\x9f\x89\x13\x04r|H\x98\x0b\xe7\xe2D\xc1D\x9f\x12&\nd\xf8\x910v \xfe$L\x16x\xf8\x910YO\xc4\x89\x81\x08\xf8\x910'\xe0\xc5\x83\x86\xfc+=\xf0r\xc1\xc3~\x15\x9e\xf8:e\x80?\x08Ah\x80\x1f\tAh\x80\x1f\t\xeb\x07\x9f>|\xfcv\x80\x83OS\x83\xf9c\xe7\x90z\xa0\xd0\x7ff\xa2\x81\xb0\xda\xe0S\xfa\xe4j\xa4?\x84)\xa7z\x81\x02\xe0\xfbS\x91\xaaq\xaf\xb5<\xb8\xd7\xf7"
+2026-06-02 10:49:31,491 - hpack.hpack - DEBUG - Decoding b'\x88_\x96\x1du\xd0b\r&=LtA\xea\xfbP\x93\x8e\xc4\x150Z\x99V{@\x90\xf2\xb1\x0fRKRVO\xaa\xca\xb1\xebI\x8fR?\x85\xa8\xe8\xa8\xd2\xcbX\xa1\xa8\xeb\x10d\x9c\xbfJTu\x90\x93\xd8_\xa5)\x1f\x95\x871`\x07\xd2\x94\xda\x84\xada{\x8e\x83H4\x97@\x85\xae\xc1\xcdH\xff\x86\xa8\xeb\x10d\x9c\xbfd\x96\xd0z\xbe\x94\x00T\xca:\x94\x0b\xef\x81@\x02\xe0\x01p\x00S\x16\x8d\xff\x0f\x12\x96\xdfi~\x94\x00\x94\xcbmJ\x08\x02q@\x82\xe3O\xdcd*b\xd1\xbfY\xad\x1aR2OIjO\xda\x92\x9a\x82\xd4:K\x07\xf3\xd1\x07\xa9t\xf9O\xf3\xf6\xa4\xa6\xa0\xb5\x0e\x92\xfc\xc1\xc3~\x15\x9e\xff_\xeb\xa2\x0fR\xe9\xf2\x9f@\x86\x19\x08Z\xd2\xb1\'\xff\x13\xdcR-{\x1a\xdc!Z\x1b\t?\xd2\x9b\x8aE\xafc[\x84+]2j*\x11\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xd8m\xa2\x85\xb8\x96\xc4\x18\xf5})\xb8\xa4Z\xf65\xb8B\xb6\x1bh\xa1n%\xb1\x06=Kg2\x13\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xda\x0f!h\xfaSqH\xb5\xeckp\x85nG\xe4\xe3_Jn)\x16\xbd\x8dn\x10\xad\x84\xf6R\xb6\x11\x91\'\xb1\x1fJn)\x16\xbd\x8dn\x10\xad\xae\x81\xa6S\xd9O\xd2\x9b\x8aE\xafc[\x84+k\xa0i\x94\xf6R\xb7\x12\xd8\x83\x1e\xaf@\x94%\x87B\x16=\x86\x98\xd5-aP{l!V\xac\xf4\x18\x9e\xbf\x89%\x87B\x16=\x86\x98\xd5\x7f@\x90!\xeaIjJ\xc8)-\xb0\xc9\xf4\xb5g\xa0\xc4\xf5\xff\x00A,5iY\x16\x11O\xf5ak=\x89Y\x03\xa6\xba\x0b\xfe\x94\xffU\x1e\xa2\x15m\x91t\'!\xe4\x15\xb6N\x01\xc29\xa9\x9a\x93\xd5\xe3\xfd)\xfe\xad\xa9\x03\x94\xab\x1a\xaa\rQ\x7f\xd7\xd9\xe3\xe8R%dXE?\xd5G\xa8\xbf\xeb\xee1\xa0\xab[a\x94\xffH-\x12\xff\xaf\xbb\x0bY\xecJ\xd6\xd8e\x18\x89\x8d\xf6\x0e\xa4P4\x96\x1a\xcd\x8d)\xad\x82"\xbb\x0bY\xecO\xdf\x83\xd9\xd4\xb6,\x8b\x08\xa7\xfaAh\x97\xfd\x7f~\xb7\xb0\xbd\xad5\x85Y6Z\x84\x96E\x93\xea\xb2\xa1iOb\x9f\xe9\x04\xb0\xd5\xa7\xfd}\xd8Z\xcfbV\xb6\xc3(\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMl\x11\x15\xd8Z\xcfb\x7f@\x92%\x87B\x16=\x86\x98\xd5,z\xcbQlZ\xb3\xd0bz\x88@\xe9*\xc7\xb0\xd3\x1a\xaf@\x8d\xac\xb6Rd \xc7\xa9\x0bVz\x0cO_\xff\x02$\xebZ5\x87a\'\x83\xe7\xe9BN\xb5\xa3Z3&\xa2\xa1\x10|\xfd(I\xd6\xb4kKm\x14-\xdc\xb6 \xc7\xaa\x0f\x9f\xa5\t:\xd6\x8dim\xa2\x85\xbb\x96\xc4\x18\xf5-A\x90\x98>~\x94$\xebZ5\xa9<\x85\xa2\x0f\x9f\xa5\t:\xd6\x8do\x07\xf0\xe3P|\xfd(I\xd6\xb4kJ{)ZQ\x91\'\xb1\x10|\xfd(I\xd6\xb4kW@\xd3)\xec\xa6\x0f\x9f\xa5\t:\xd6\x8dj\xe8\x1ae=\x94\xad\xdc\xb6 \xc7\xaa\x0f\x9fT\x01*@\x8e\xb0\xb5\x9e\xc4\x9a\xa9\x96-RVsT\x94\x7f\xef\x90\xb2\x8e\xda\x13\x07\xf2\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMlx,kXZ\xcfbQ\xfe\x10\xf5$\xbeS\x01r\xfb\xe8\xd2o\x9b\xad9|\x03-\xd3`\xd5\x9eqkg\xb0|p\x14\xdbdv\xffV\xfap\xa3.oF[F\x7fTf\xf7{\xbe\xad\xdb\xbc\xe5\xcf\xc1\xa4\xe6\xea\x84\x9b\xa1=h\xbf\x93\xde\x8b\xfc\x04\x1b\xfa\xbc\x1a\xf3\xde!\x86\x17q\xcf\xa4\x9f\xcfv\x03ESF@\x8c\xf2\xb7\x94!j\xec:JD\x98\xf5\x7f\x010@\x8b\xf2\xb4\xb6\x0e\x92\xacz\xd2c\xd4\x8f\x89\xdd\x0e\x8c\x1a\xb6\xe4\xc5\x93O@\x85\x1d\tY\x1d\xc9\xa4\x9d\x98?\x9b\x8d4\xcf\xf3\xf6\xa5#\x80M\xbe \x00\x1fS\xb2\xb0\x9f\x83\xf9\xb8\xd3L\xff?jR8\x04\xdb\xe2\x00\x01R\x83\xa8\xf5\x17{\x8b\x84\x84-i[\x05D<\x86\xaao'
+2026-06-02 10:49:31,491 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-02 10:49:31,491 - hpack.hpack - DEBUG - Decoded (b':status', b'200'), consumed 1
+2026-06-02 10:49:31,492 - hpack.hpack - DEBUG - Decoded 31, consumed 1 bytes
+2026-06-02 10:49:31,492 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 10:49:31,493 - hpack.hpack - DEBUG - Decoded (b'content-type', b'application/json; charset=utf-8'), total consumed 24 bytes, indexed True
+2026-06-02 10:49:31,493 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-02 10:49:31,493 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 10:49:31,493 - hpack.hpack - DEBUG - Decoded (b'x-content-type-options', b'nosniff'), total consumed 24 bytes, indexed True
+2026-06-02 10:49:31,494 - hpack.hpack - DEBUG - Decoded 24, consumed 1 bytes
+2026-06-02 10:49:31,494 - hpack.hpack - DEBUG - Decoded 33, consumed 1 bytes
+2026-06-02 10:49:31,494 - hpack.hpack - DEBUG - Decoded (b'cache-control', b'no-cache, no-store, max-age=0, must-revalidate'), total consumed 35 bytes, indexed True
+2026-06-02 10:49:31,494 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 10:49:31,494 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-02 10:49:31,494 - hpack.hpack - DEBUG - Decoded (b'pragma', b'no-cache'), total consumed 14 bytes, indexed True
+2026-06-02 10:49:31,495 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-02 10:49:31,495 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 10:49:31,495 - hpack.hpack - DEBUG - Decoded (b'expires', b'Mon, 01 Jan 1990 00:00:00 GMT'), total consumed 24 bytes, indexed True
+2026-06-02 10:49:31,495 - hpack.hpack - DEBUG - Decoded 33, consumed 2 bytes
+2026-06-02 10:49:31,495 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 10:49:31,495 - hpack.hpack - DEBUG - Decoded (b'date', b'Tue, 02 Jun 2026 10:49:31 GMT'), total consumed 25 bytes, indexed False
+2026-06-02 10:49:31,496 - hpack.hpack - DEBUG - Decoded 25, consumed 1 bytes
+2026-06-02 10:49:31,496 - hpack.hpack - DEBUG - Decoded 45, consumed 1 bytes
+2026-06-02 10:49:31,496 - hpack.hpack - DEBUG - Decoded (b'content-disposition', b'attachment; filename="json.txt"; filename*=UTF-8\'\'json.txt'), total consumed 47 bytes, indexed True
+2026-06-02 10:49:31,496 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-02 10:49:31,496 - hpack.hpack - DEBUG - Decoded 146, consumed 2 bytes
+2026-06-02 10:49:31,496 - hpack.hpack - DEBUG - Decoded (b'accept-ch', b'Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Model, Sec-CH-UA-WoW64, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version'), total consumed 156 bytes, indexed True
+2026-06-02 10:49:31,497 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-02 10:49:31,497 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-02 10:49:31,497 - hpack.hpack - DEBUG - Decoded (b'cross-origin-resource-policy', b'cross-origin'), total consumed 32 bytes, indexed True
+2026-06-02 10:49:31,497 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-02 10:49:31,497 - hpack.hpack - DEBUG - Decoded 127, consumed 2 bytes
+2026-06-02 10:49:31,497 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"script-src 'report-sample' 'nonce-Q_jcWaI2urh0aAagmgmonw' 'unsafe-inline';object-src 'none';base-uri 'self';report-uri /_/TranslateApiHttp/cspreport;worker-src 'self'"), total consumed 147 bytes, indexed True
+2026-06-02 10:49:31,497 - hpack.hpack - DEBUG - Decoded 62, consumed 1 bytes
+2026-06-02 10:49:31,498 - hpack.hpack - DEBUG - Decoded 55, consumed 1 bytes
+2026-06-02 10:49:31,498 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"require-trusted-types-for 'script';report-uri /_/TranslateApiHttp/cspreport"), total consumed 57 bytes, indexed True
+2026-06-02 10:49:31,498 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-02 10:49:31,498 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-02 10:49:31,498 - hpack.hpack - DEBUG - Decoded (b'cross-origin-opener-policy', b'same-origin'), total consumed 29 bytes, indexed True
+2026-06-02 10:49:31,498 - hpack.hpack - DEBUG - Decoded 13, consumed 1 bytes
+2026-06-02 10:49:31,498 - hpack.hpack - DEBUG - Decoded 129, consumed 2 bytes
+2026-06-02 10:49:31,499 - hpack.hpack - DEBUG - Decoded (b'permissions-policy', b'ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*'), total consumed 146 bytes, indexed True
+2026-06-02 10:49:31,499 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-02 10:49:31,499 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-02 10:49:31,499 - hpack.hpack - DEBUG - Decoded (b'access-control-allow-origin', <memory at 0xffff6a65d0c0>), total consumed 3 bytes, indexed True
+2026-06-02 10:49:31,499 - hpack.hpack - DEBUG - Decoded 14, consumed 1 bytes
+2026-06-02 10:49:31,499 - hpack.hpack - DEBUG - Decoded 111, consumed 1 bytes
+2026-06-02 10:49:31,500 - hpack.hpack - DEBUG - Decoded (b'reporting-endpoints', b'default="/_/TranslateApiHttp/web-reports?context=eJzj4tDikmJw0JBiEOLh2P3q1wU2gRd7Dk5jUlJKyi-MLylKzCvOSSxJLU4tKkstijcyMDIzMDU21DOwiC8wAAA7HhNc"'), total consumed 128 bytes, indexed True
+2026-06-02 10:49:31,500 - hpack.hpack - DEBUG - Decoded 54, consumed 1 bytes
+2026-06-02 10:49:31,500 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-02 10:49:31,500 - hpack.hpack - DEBUG - Decoded (b'server', <memory at 0xffff6a65cb80>), total consumed 5 bytes, indexed True
+2026-06-02 10:49:31,500 - hpack.hpack - DEBUG - Decoded 12, consumed 1 bytes
+2026-06-02 10:49:31,500 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-02 10:49:31,500 - hpack.hpack - DEBUG - Decoded (b'x-xss-protection', <memory at 0xffff6a65c580>), total consumed 16 bytes, indexed True
+2026-06-02 10:49:31,501 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-02 10:49:31,501 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-02 10:49:31,501 - hpack.hpack - DEBUG - Decoded (b'x-frame-options', b'SAMEORIGIN'), total consumed 23 bytes, indexed True
+2026-06-02 10:49:31,501 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 10:49:31,501 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-02 10:49:31,501 - hpack.hpack - DEBUG - Decoded (b'alt-svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), total consumed 44 bytes, indexed True
+2026-06-02 10:49:31,501 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-02 10:49:31,501 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-02 10:49:31,502 - hpack.hpack - DEBUG - Decoded (b'accept-ranges', b'none'), total consumed 5 bytes, indexed True
+2026-06-02 10:49:31,502 - hpack.hpack - DEBUG - Decoded 59, consumed 1 bytes
+2026-06-02 10:49:31,502 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-02 10:49:31,502 - hpack.hpack - DEBUG - Decoded (b'vary', b'Accept-Encoding'), total consumed 13 bytes, indexed True
+2026-06-02 10:49:31,503 - httpx._client - DEBUG - HTTP Request: GET https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=cat "HTTP/2 200 OK"
+2026-06-02 10:49:31,665 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 10:49:31,665 - python_multipart.multipart - DEBUG - Calling on_header_field with data[36:55]
+2026-06-02 10:49:31,665 - python_multipart.multipart - DEBUG - Calling on_header_value with data[57:88]
+2026-06-02 10:49:31,665 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:49:31,666 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 10:49:31,666 - python_multipart.multipart - DEBUG - Calling on_part_data with data[92:163]
+2026-06-02 10:49:31,666 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 10:49:31,666 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 10:49:31,666 - python_multipart.multipart - DEBUG - Calling on_header_field with data[201:220]
+2026-06-02 10:49:31,667 - python_multipart.multipart - DEBUG - Calling on_header_value with data[222:266]
+2026-06-02 10:49:31,667 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:49:31,667 - python_multipart.multipart - DEBUG - Calling on_header_field with data[268:280]
+2026-06-02 10:49:31,667 - python_multipart.multipart - DEBUG - Calling on_header_value with data[282:292]
+2026-06-02 10:49:31,667 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:49:31,667 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 10:49:31,670 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:104096]
+2026-06-02 10:49:31,671 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:243343]
+2026-06-02 10:49:31,671 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 10:49:31,671 - python_multipart.multipart - DEBUG - Calling on_end with no data
+2026-06-02 10:59:15,802 - AuthUserService - INFO - Пользователь ws_raw_1780397955355 зарегистрирован
+2026-06-02 10:59:17,042 - hpack.hpack - DEBUG - HPACK encoding <generator object _check_path_header.<locals>.inner at 0xffff69508ac0>
+2026-06-02 10:59:17,043 - hpack.hpack - DEBUG - Adding (b':method', b'GET') to the header table
+2026-06-02 10:59:17,043 - hpack.hpack - DEBUG - Encoding 2 with 7 bits
+2026-06-02 10:59:17,044 - hpack.hpack - DEBUG - Adding (b':authority', b'translate.googleapis.com') to the header table
+2026-06-02 10:59:17,044 - hpack.hpack - DEBUG - Encoding 1 with 6 bits
+2026-06-02 10:59:17,045 - hpack.hpack - DEBUG - Encoding 17 with 7 bits
+2026-06-02 10:59:17,045 - hpack.hpack - DEBUG - Adding (b':scheme', b'https') to the header table
+2026-06-02 10:59:17,045 - hpack.hpack - DEBUG - Encoding 7 with 7 bits
+2026-06-02 10:59:17,046 - hpack.hpack - DEBUG - Adding (b':path', b'/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=cat') to the header table
+2026-06-02 10:59:17,046 - hpack.hpack - DEBUG - Encoding 4 with 6 bits
+2026-06-02 10:59:17,046 - hpack.hpack - DEBUG - Encoding 121 with 7 bits
+2026-06-02 10:59:17,047 - hpack.hpack - DEBUG - Adding (b'accept', b'*/*') to the header table
+2026-06-02 10:59:17,047 - hpack.hpack - DEBUG - Encoding 19 with 6 bits
+2026-06-02 10:59:17,047 - hpack.hpack - DEBUG - Encoding 3 with 7 bits
+2026-06-02 10:59:17,047 - hpack.hpack - DEBUG - Adding (b'accept-encoding', b'gzip, deflate') to the header table
+2026-06-02 10:59:17,047 - hpack.hpack - DEBUG - Encoding 16 with 7 bits
+2026-06-02 10:59:17,048 - hpack.hpack - DEBUG - Adding (b'user-agent', b'Mozilla/5.0 (Windows NT 10.0; Win64; x64)') to the header table
+2026-06-02 10:59:17,048 - hpack.hpack - DEBUG - Encoding 58 with 6 bits
+2026-06-02 10:59:17,048 - hpack.hpack - DEBUG - Encoding 32 with 7 bits
+2026-06-02 10:59:17,048 - hpack.hpack - DEBUG - Encoded header block to b"\x82A\x91M\x83\xa9\x14\r%^c\x9ej\n:\xcc\x85\xc8z\x7f\x87D\xf9a6\x0e\xa4P4\x96!\xb0\x83U5\x05\xff\tA\x8bR`\x99>~\x11D\x05\xab\xe14Ae\xbf\x13\xd1\x05\x96\xfcH\x98\x06\x9f\x89\x13\x04r|H\x98\x0b\xe7\xe2D\xc1D\x9f\x12&\nd\xf8\x910v \xfe$L\x16x\xf8\x910YO\xc4\x89\x81\x08\xf8\x910'\xe0\xc5\x83\x86\xfc+=\xf0r\xc1\xc3~\x15\x9e\xf8:e\x80?\x08Ah\x80\x1f\tAh\x80\x1f\t\xeb\x07\x9f>|\xfcv\x80\x83OS\x83\xf9c\xe7\x90z\xa0\xd0\x7ff\xa2\x81\xb0\xda\xe0S\xfa\xe4j\xa4?\x84)\xa7z\x81\x02\xe0\xfbS\x91\xaaq\xaf\xb5<\xb8\xd7\xf7"
+2026-06-02 10:59:17,631 - hpack.hpack - DEBUG - Decoding b'\x88_\x96\x1du\xd0b\r&=LtA\xea\xfbP\x93\x8e\xc4\x150Z\x99V{@\x90\xf2\xb1\x0fRKRVO\xaa\xca\xb1\xebI\x8fR?\x85\xa8\xe8\xa8\xd2\xcbX\xa1\xa8\xeb\x10d\x9c\xbfJTu\x90\x93\xd8_\xa5)\x1f\x95\x871`\x07\xd2\x94\xda\x84\xada{\x8e\x83H4\x97@\x85\xae\xc1\xcdH\xff\x86\xa8\xeb\x10d\x9c\xbfd\x96\xd0z\xbe\x94\x00T\xca:\x94\x0b\xef\x81@\x02\xe0\x01p\x00S\x16\x8d\xff\x0f\x12\x96\xdfi~\x94\x00\x94\xcbmJ\x08\x02q@\x82\xe3o\xdc\x0b\xaab\xd1\xbfY\xad\x1aR2OIjO\xda\x92\x9a\x82\xd4:K\x07\xf3\xd1\x07\xa9t\xf9O\xf3\xf6\xa4\xa6\xa0\xb5\x0e\x92\xfc\xc1\xc3~\x15\x9e\xff_\xeb\xa2\x0fR\xe9\xf2\x9f@\x90!\xeaIjJ\xc8)-\xb0\xc9\xf4\xb5g\xa0\xc4\xf5\xb7\xb0\xbd\xad5\x85Y6Z\x84\x96E\x93\xea\xb2\xa1iOb\x9f\xe9\x04\xb0\xd5\xa7\xfd}\xd8Z\xcfbV\xb6\xc3(\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMl\x11\x15\xd8Z\xcfb\x7f~\xff\x01A,5iY\x16\x11O\xf5ak=\x89Y\x03\xa6\xba\x0b\xfe\x94\xffU\x1e\xa2\x15g\xe56\xd6K\xa7n>\xde\xbb\x81\x9c-x\xc9\xd8\x9a\xfc\x7f\xa5?\xd5\xb5 r\x95cUA\xaa/\xfa\xfb<}\nD\xac\x8b\x08\xa7\xfa\xa8\xf5\x17\xfd}\xc64\x15kl2\x9f\xe9\x05\xa2_\xf5\xf7ak=\x89Z\xdb\x0c\xa3\x111\xbe\xc1\xd4\x8a\x06\x92\xc3Y\xb1\xa55\xb0DWak=\x89\xfb\xf0{:\x96\xc5\x91a\x14\xffH-\x12\xff\xaf@\x94%\x87B\x16=\x86\x98\xd5-aP{l!V\xac\xf4\x18\x9e\xbf\x89%\x87B\x16=\x86\x98\xd5\x7f@\x8d\xac\xb6Rd \xc7\xa9\x0bVz\x0cO_\xff\x02$\xebZ5\x87a\'\x83\xe7\xe9BN\xb5\xa3Z3&\xa2\xa1\x10|\xfd(I\xd6\xb4kKm\x14-\xdc\xb6 \xc7\xaa\x0f\x9f\xa5\t:\xd6\x8dim\xa2\x85\xbb\x96\xc4\x18\xf5-A\x90\x98>~\x94$\xebZ5\xa9<\x85\xa2\x0f\x9f\xa5\t:\xd6\x8do\x07\xf0\xe3P|\xfd(I\xd6\xb4kJ{)ZQ\x91\'\xb1\x10|\xfd(I\xd6\xb4kW@\xd3)\xec\xa6\x0f\x9f\xa5\t:\xd6\x8dj\xe8\x1ae=\x94\xad\xdc\xb6 \xc7\xaa\x0f\x9f@\x86\x19\x08Z\xd2\xb1\'\xff\x13\xdcR-{\x1a\xdc!Z\x1b\t?\xd2\x9b\x8aE\xafc[\x84+]2j*\x11\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xd8m\xa2\x85\xb8\x96\xc4\x18\xf5})\xb8\xa4Z\xf65\xb8B\xb6\x1bh\xa1n%\xb1\x06=Kg2\x13\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xda\x0f!h\xfaSqH\xb5\xeckp\x85nG\xe4\xe3_Jn)\x16\xbd\x8dn\x10\xad\x84\xf6R\xb6\x11\x91\'\xb1\x1fJn)\x16\xbd\x8dn\x10\xad\xae\x81\xa6S\xd9O\xd2\x9b\x8aE\xafc[\x84+k\xa0i\x94\xf6R\xb7\x12\xd8\x83\x1e\xaf@\x92%\x87B\x16=\x86\x98\xd5,z\xcbQlZ\xb3\xd0bz\x88@\xe9*\xc7\xb0\xd3\x1a\xafT\x01*@\x8e\xb0\xb5\x9e\xc4\x9a\xa9\x96-RVsT\x94\x7f\xee\x90\xb2\x8e\xda\x13\x07\xf2\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMlx,kXZ\xcfbQ\xfe\x10\xf5$\xbeS\x01r\xfb\xe8\xd2o\x9b\xad9|\x06\xbb\xa6\xc1\xab<\xe3\xc6\xccNx\xcd\x1e\xcd\x05z\xf6\xe2\xfe\xd1\x97v\xe7\xa6\xef\xd3sG\xdc\xf3U\xfb\xc1\xd5;\x8c\x1dY\xfdQ\x9b;G\x06\x8e\x9a<h\xdf\x90\x1a_\xd9\xe1\rL\x8d\x10\xddw\x1e\x0b2\x7f?v\x03ESF@\x8c\xf2\xb7\x94!j\xec:JD\x98\xf5\x7f\x010@\x8b\xf2\xb4\xb6\x0e\x92\xacz\xd2c\xd4\x8f\x89\xdd\x0e\x8c\x1a\xb6\xe4\xc5\x93O@\x85\x1d\tY\x1d\xc9\xa4\x9d\x98?\x9b\x8d4\xcf\xf3\xf6\xa5#\x80M\xbe \x00\x1fS\xb2\xb0\x9f\x83\xf9\xb8\xd3L\xff?jR8\x04\xdb\xe2\x00\x01R\x83\xa8\xf5\x17{\x8b\x84\x84-i[\x05D<\x86\xaao'
+2026-06-02 10:59:17,632 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-02 10:59:17,633 - hpack.hpack - DEBUG - Decoded (b':status', b'200'), consumed 1
+2026-06-02 10:59:17,633 - hpack.hpack - DEBUG - Decoded 31, consumed 1 bytes
+2026-06-02 10:59:17,634 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 10:59:17,635 - hpack.hpack - DEBUG - Decoded (b'content-type', b'application/json; charset=utf-8'), total consumed 24 bytes, indexed True
+2026-06-02 10:59:17,635 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-02 10:59:17,636 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 10:59:17,636 - hpack.hpack - DEBUG - Decoded (b'x-content-type-options', b'nosniff'), total consumed 24 bytes, indexed True
+2026-06-02 10:59:17,636 - hpack.hpack - DEBUG - Decoded 24, consumed 1 bytes
+2026-06-02 10:59:17,637 - hpack.hpack - DEBUG - Decoded 33, consumed 1 bytes
+2026-06-02 10:59:17,637 - hpack.hpack - DEBUG - Decoded (b'cache-control', b'no-cache, no-store, max-age=0, must-revalidate'), total consumed 35 bytes, indexed True
+2026-06-02 10:59:17,638 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 10:59:17,639 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-02 10:59:17,639 - hpack.hpack - DEBUG - Decoded (b'pragma', b'no-cache'), total consumed 14 bytes, indexed True
+2026-06-02 10:59:17,640 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-02 10:59:17,640 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 10:59:17,641 - hpack.hpack - DEBUG - Decoded (b'expires', b'Mon, 01 Jan 1990 00:00:00 GMT'), total consumed 24 bytes, indexed True
+2026-06-02 10:59:17,641 - hpack.hpack - DEBUG - Decoded 33, consumed 2 bytes
+2026-06-02 10:59:17,642 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 10:59:17,642 - hpack.hpack - DEBUG - Decoded (b'date', b'Tue, 02 Jun 2026 10:59:17 GMT'), total consumed 25 bytes, indexed False
+2026-06-02 10:59:17,643 - hpack.hpack - DEBUG - Decoded 25, consumed 1 bytes
+2026-06-02 10:59:17,643 - hpack.hpack - DEBUG - Decoded 45, consumed 1 bytes
+2026-06-02 10:59:17,643 - hpack.hpack - DEBUG - Decoded (b'content-disposition', b'attachment; filename="json.txt"; filename*=UTF-8\'\'json.txt'), total consumed 47 bytes, indexed True
+2026-06-02 10:59:17,643 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-02 10:59:17,644 - hpack.hpack - DEBUG - Decoded 55, consumed 1 bytes
+2026-06-02 10:59:17,644 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"require-trusted-types-for 'script';report-uri /_/TranslateApiHttp/cspreport"), total consumed 74 bytes, indexed True
+2026-06-02 10:59:17,644 - hpack.hpack - DEBUG - Decoded 62, consumed 1 bytes
+2026-06-02 10:59:17,645 - hpack.hpack - DEBUG - Decoded 128, consumed 2 bytes
+2026-06-02 10:59:17,646 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"script-src 'report-sample' 'nonce-9fiR3eNRHqyv03F4wIqcPw' 'unsafe-inline';object-src 'none';base-uri 'self';report-uri /_/TranslateApiHttp/cspreport;worker-src 'self'"), total consumed 131 bytes, indexed True
+2026-06-02 10:59:17,646 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-02 10:59:17,647 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-02 10:59:17,648 - hpack.hpack - DEBUG - Decoded (b'cross-origin-resource-policy', b'cross-origin'), total consumed 32 bytes, indexed True
+2026-06-02 10:59:17,649 - hpack.hpack - DEBUG - Decoded 13, consumed 1 bytes
+2026-06-02 10:59:17,651 - hpack.hpack - DEBUG - Decoded 129, consumed 2 bytes
+2026-06-02 10:59:17,651 - hpack.hpack - DEBUG - Decoded (b'permissions-policy', b'ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*'), total consumed 146 bytes, indexed True
+2026-06-02 10:59:17,653 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-02 10:59:17,653 - hpack.hpack - DEBUG - Decoded 146, consumed 2 bytes
+2026-06-02 10:59:17,653 - hpack.hpack - DEBUG - Decoded (b'accept-ch', b'Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Model, Sec-CH-UA-WoW64, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version'), total consumed 156 bytes, indexed True
+2026-06-02 10:59:17,654 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-02 10:59:17,654 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-02 10:59:17,654 - hpack.hpack - DEBUG - Decoded (b'cross-origin-opener-policy', b'same-origin'), total consumed 29 bytes, indexed True
+2026-06-02 10:59:17,654 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-02 10:59:17,654 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-02 10:59:17,654 - hpack.hpack - DEBUG - Decoded (b'access-control-allow-origin', <memory at 0xffff6a65d540>), total consumed 3 bytes, indexed True
+2026-06-02 10:59:17,655 - hpack.hpack - DEBUG - Decoded 14, consumed 1 bytes
+2026-06-02 10:59:17,655 - hpack.hpack - DEBUG - Decoded 110, consumed 1 bytes
+2026-06-02 10:59:17,655 - hpack.hpack - DEBUG - Decoded (b'reporting-endpoints', b'default="/_/TranslateApiHttp/web-reports?context=eJzj4tDikmJw1pBiEOLhaH3_6wKbQMe8CSeZlJSS8gvjS4oS84pzEktSi1OLylKL4o0MjMwMTI0N9Qws4gsMAB7HErI"'), total consumed 127 bytes, indexed True
+2026-06-02 10:59:17,656 - hpack.hpack - DEBUG - Decoded 54, consumed 1 bytes
+2026-06-02 10:59:17,656 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-02 10:59:17,656 - hpack.hpack - DEBUG - Decoded (b'server', <memory at 0xffff6a65c880>), total consumed 5 bytes, indexed True
+2026-06-02 10:59:17,656 - hpack.hpack - DEBUG - Decoded 12, consumed 1 bytes
+2026-06-02 10:59:17,656 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-02 10:59:17,656 - hpack.hpack - DEBUG - Decoded (b'x-xss-protection', <memory at 0xffff6a65cb80>), total consumed 16 bytes, indexed True
+2026-06-02 10:59:17,656 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-02 10:59:17,656 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-02 10:59:17,657 - hpack.hpack - DEBUG - Decoded (b'x-frame-options', b'SAMEORIGIN'), total consumed 23 bytes, indexed True
+2026-06-02 10:59:17,657 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 10:59:17,657 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-02 10:59:17,657 - hpack.hpack - DEBUG - Decoded (b'alt-svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), total consumed 44 bytes, indexed True
+2026-06-02 10:59:17,657 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-02 10:59:17,657 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-02 10:59:17,657 - hpack.hpack - DEBUG - Decoded (b'accept-ranges', b'none'), total consumed 5 bytes, indexed True
+2026-06-02 10:59:17,658 - hpack.hpack - DEBUG - Decoded 59, consumed 1 bytes
+2026-06-02 10:59:17,658 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-02 10:59:17,658 - hpack.hpack - DEBUG - Decoded (b'vary', b'Accept-Encoding'), total consumed 13 bytes, indexed True
+2026-06-02 10:59:17,659 - httpx._client - DEBUG - HTTP Request: GET https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=cat "HTTP/2 200 OK"
+2026-06-02 10:59:17,840 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 10:59:17,843 - python_multipart.multipart - DEBUG - Calling on_header_field with data[36:55]
+2026-06-02 10:59:17,846 - python_multipart.multipart - DEBUG - Calling on_header_value with data[57:88]
+2026-06-02 10:59:17,846 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:59:17,847 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 10:59:17,847 - python_multipart.multipart - DEBUG - Calling on_part_data with data[92:163]
+2026-06-02 10:59:17,847 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 10:59:17,847 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 10:59:17,848 - python_multipart.multipart - DEBUG - Calling on_header_field with data[201:220]
+2026-06-02 10:59:17,848 - python_multipart.multipart - DEBUG - Calling on_header_value with data[222:266]
+2026-06-02 10:59:17,848 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:59:17,848 - python_multipart.multipart - DEBUG - Calling on_header_field with data[268:280]
+2026-06-02 10:59:17,848 - python_multipart.multipart - DEBUG - Calling on_header_value with data[282:292]
+2026-06-02 10:59:17,848 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 10:59:17,849 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 10:59:17,853 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:44352]
+2026-06-02 10:59:17,855 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:156600]
+2026-06-02 10:59:17,856 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:146487]
+2026-06-02 10:59:17,856 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 10:59:17,857 - python_multipart.multipart - DEBUG - Calling on_end with no data
+2026-06-02 10:59:17,964 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket connected: user=63e05c33-8b43-45b4-8f8f-c759b2a8ce26, session=27ecf307-3d55-4a2b-b149-37028c13e443, image=None
+2026-06-02 10:59:18,015 - AnalyzeRouter - INFO - WebSocket disconnected: session=27ecf307-3d55-4a2b-b149-37028c13e443
+2026-06-02 10:59:18,015 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket disconnected: session=27ecf307-3d55-4a2b-b149-37028c13e443
+2026-06-02 10:59:18,034 - server.service.application.tasks.manager - ERROR - Failed to process task 8d1a0bdb-b33f-4e34-a947-12f1cc575155: Task 8d1a0bdb-b33f-4e34-a947-12f1cc575155 not found
+Traceback (most recent call last):
+  File "/app/server/service/application/tasks/manager.py", line 127, in _process_task
+    raise RuntimeError(f"Task {task_id} not found")
+RuntimeError: Task 8d1a0bdb-b33f-4e34-a947-12f1cc575155 not found
+2026-06-02 11:03:17,834 - AuthUserService - INFO - Пользователь proxy_ws_1780398197466 зарегистрирован
+2026-06-02 11:03:18,954 - hpack.hpack - DEBUG - HPACK encoding <generator object _check_path_header.<locals>.inner at 0xffff6952da80>
+2026-06-02 11:03:18,955 - hpack.hpack - DEBUG - Adding (b':method', b'GET') to the header table
+2026-06-02 11:03:18,955 - hpack.hpack - DEBUG - Encoding 2 with 7 bits
+2026-06-02 11:03:18,956 - hpack.hpack - DEBUG - Adding (b':authority', b'translate.googleapis.com') to the header table
+2026-06-02 11:03:18,956 - hpack.hpack - DEBUG - Encoding 1 with 6 bits
+2026-06-02 11:03:18,956 - hpack.hpack - DEBUG - Encoding 17 with 7 bits
+2026-06-02 11:03:18,956 - hpack.hpack - DEBUG - Adding (b':scheme', b'https') to the header table
+2026-06-02 11:03:18,956 - hpack.hpack - DEBUG - Encoding 7 with 7 bits
+2026-06-02 11:03:18,957 - hpack.hpack - DEBUG - Adding (b':path', b'/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=cat') to the header table
+2026-06-02 11:03:18,957 - hpack.hpack - DEBUG - Encoding 4 with 6 bits
+2026-06-02 11:03:18,958 - hpack.hpack - DEBUG - Encoding 121 with 7 bits
+2026-06-02 11:03:18,958 - hpack.hpack - DEBUG - Adding (b'accept', b'*/*') to the header table
+2026-06-02 11:03:18,958 - hpack.hpack - DEBUG - Encoding 19 with 6 bits
+2026-06-02 11:03:18,958 - hpack.hpack - DEBUG - Encoding 3 with 7 bits
+2026-06-02 11:03:18,958 - hpack.hpack - DEBUG - Adding (b'accept-encoding', b'gzip, deflate') to the header table
+2026-06-02 11:03:18,959 - hpack.hpack - DEBUG - Encoding 16 with 7 bits
+2026-06-02 11:03:18,959 - hpack.hpack - DEBUG - Adding (b'user-agent', b'Mozilla/5.0 (Windows NT 10.0; Win64; x64)') to the header table
+2026-06-02 11:03:18,959 - hpack.hpack - DEBUG - Encoding 58 with 6 bits
+2026-06-02 11:03:18,959 - hpack.hpack - DEBUG - Encoding 32 with 7 bits
+2026-06-02 11:03:18,959 - hpack.hpack - DEBUG - Encoded header block to b"\x82A\x91M\x83\xa9\x14\r%^c\x9ej\n:\xcc\x85\xc8z\x7f\x87D\xf9a6\x0e\xa4P4\x96!\xb0\x83U5\x05\xff\tA\x8bR`\x99>~\x11D\x05\xab\xe14Ae\xbf\x13\xd1\x05\x96\xfcH\x98\x06\x9f\x89\x13\x04r|H\x98\x0b\xe7\xe2D\xc1D\x9f\x12&\nd\xf8\x910v \xfe$L\x16x\xf8\x910YO\xc4\x89\x81\x08\xf8\x910'\xe0\xc5\x83\x86\xfc+=\xf0r\xc1\xc3~\x15\x9e\xf8:e\x80?\x08Ah\x80\x1f\tAh\x80\x1f\t\xeb\x07\x9f>|\xfcv\x80\x83OS\x83\xf9c\xe7\x90z\xa0\xd0\x7ff\xa2\x81\xb0\xda\xe0S\xfa\xe4j\xa4?\x84)\xa7z\x81\x02\xe0\xfbS\x91\xaaq\xaf\xb5<\xb8\xd7\xf7"
+2026-06-02 11:03:19,923 - hpack.hpack - DEBUG - Decoding b'\x88_\x96\x1du\xd0b\r&=LtA\xea\xfbP\x93\x8e\xc4\x150Z\x99V{@\x90\xf2\xb1\x0fRKRVO\xaa\xca\xb1\xebI\x8fR?\x85\xa8\xe8\xa8\xd2\xcbX\xa1\xa8\xeb\x10d\x9c\xbfJTu\x90\x93\xd8_\xa5)\x1f\x95\x871`\x07\xd2\x94\xda\x84\xada{\x8e\x83H4\x97@\x85\xae\xc1\xcdH\xff\x86\xa8\xeb\x10d\x9c\xbfd\x96\xd0z\xbe\x94\x00T\xca:\x94\x0b\xef\x81@\x02\xe0\x01p\x00S\x16\x8d\xff\x0f\x12\x96\xdfi~\x94\x00\x94\xcbmJ\x08\x02q@\x86\xe0\x19\xb8\x17\xd4\xc5\xa3\x7fY\xad\x1aR2OIjO\xda\x92\x9a\x82\xd4:K\x07\xf3\xd1\x07\xa9t\xf9O\xf3\xf6\xa4\xa6\xa0\xb5\x0e\x92\xfc\xc1\xc3~\x15\x9e\xff_\xeb\xa2\x0fR\xe9\xf2\x9f@\x94%\x87B\x16=\x86\x98\xd5-aP{l!V\xac\xf4\x18\x9e\xbf\x89%\x87B\x16=\x86\x98\xd5\x7f@\x90!\xeaIjJ\xc8)-\xb0\xc9\xf4\xb5g\xa0\xc4\xf5\xb7\xb0\xbd\xad5\x85Y6Z\x84\x96E\x93\xea\xb2\xa1iOb\x9f\xe9\x04\xb0\xd5\xa7\xfd}\xd8Z\xcfbV\xb6\xc3(\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMl\x11\x15\xd8Z\xcfb\x7f~\xff\x01A,5iY\x16\x11O\xf5ak=\x89Y\x03\xa6\xba\x0b\xfe\x94\xffU\x1e\xa2\x15o]M\x9f\x8f\x8b-Aq\xcd\xa3_Hw\xa3\xf1\xac\xb0\xff\xa5?\xd5\xb5 r\x95cUA\xaa/\xfa\xfb<}\nD\xac\x8b\x08\xa7\xfa\xa8\xf5\x17\xfd}\xc64\x15kl2\x9f\xe9\x05\xa2_\xf5\xf7ak=\x89Z\xdb\x0c\xa3\x111\xbe\xc1\xd4\x8a\x06\x92\xc3Y\xb1\xa55\xb0DWak=\x89\xfb\xf0{:\x96\xc5\x91a\x14\xffH-\x12\xff\xaf@\x92%\x87B\x16=\x86\x98\xd5,z\xcbQlZ\xb3\xd0bz\x88@\xe9*\xc7\xb0\xd3\x1a\xaf@\x8d\xac\xb6Rd \xc7\xa9\x0bVz\x0cO_\xff\x02$\xebZ5\x87a\'\x83\xe7\xe9BN\xb5\xa3Z3&\xa2\xa1\x10|\xfd(I\xd6\xb4kKm\x14-\xdc\xb6 \xc7\xaa\x0f\x9f\xa5\t:\xd6\x8dim\xa2\x85\xbb\x96\xc4\x18\xf5-A\x90\x98>~\x94$\xebZ5\xa9<\x85\xa2\x0f\x9f\xa5\t:\xd6\x8do\x07\xf0\xe3P|\xfd(I\xd6\xb4kJ{)ZQ\x91\'\xb1\x10|\xfd(I\xd6\xb4kW@\xd3)\xec\xa6\x0f\x9f\xa5\t:\xd6\x8dj\xe8\x1ae=\x94\xad\xdc\xb6 \xc7\xaa\x0f\x9f@\x86\x19\x08Z\xd2\xb1\'\xff\x13\xdcR-{\x1a\xdc!Z\x1b\t?\xd2\x9b\x8aE\xafc[\x84+]2j*\x11\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xd8m\xa2\x85\xb8\x96\xc4\x18\xf5})\xb8\xa4Z\xf65\xb8B\xb6\x1bh\xa1n%\xb1\x06=Kg2\x13\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xda\x0f!h\xfaSqH\xb5\xeckp\x85nG\xe4\xe3_Jn)\x16\xbd\x8dn\x10\xad\x84\xf6R\xb6\x11\x91\'\xb1\x1fJn)\x16\xbd\x8dn\x10\xad\xae\x81\xa6S\xd9O\xd2\x9b\x8aE\xafc[\x84+k\xa0i\x94\xf6R\xb7\x12\xd8\x83\x1e\xafT\x01*@\x8e\xb0\xb5\x9e\xc4\x9a\xa9\x96-RVsT\x94\x7f\xef\x90\xb2\x8e\xda\x13\x07\xf2\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMlx,kXZ\xcfbQ\xfe\x10\xf5$\xbeS\x01r\xfb\xe8\xd2o\x9b\xad9|\x03-\xd3`\xd5\x9eu\xb5\xbb8|p\x14\xdbI\xdcT\xbd\xeb7\xae\xb47\xb6\\Ty\xd9Cs\xfeU\x97(\xfa\xe1\xecNT\x0f\x87/;Q\xfb\x8b/_\xdan\x9e7\'\xa3\x9f\x9b\xa4\xe7\x0c7u\xf1\xf3\xaf\x87\xf3v\x03ESF@\x8c\xf2\xb7\x94!j\xec:JD\x98\xf5\x7f\x010@\x8b\xf2\xb4\xb6\x0e\x92\xacz\xd2c\xd4\x8f\x89\xdd\x0e\x8c\x1a\xb6\xe4\xc5\x93O@\x85\x1d\tY\x1d\xc9\xa4\x9d\x98?\x9b\x8d4\xcf\xf3\xf6\xa5#\x80M\xbe \x00\x1fS\xb2\xb0\x9f\x83\xf9\xb8\xd3L\xff?jR8\x04\xdb\xe2\x00\x01R\x83\xa8\xf5\x17{\x8b\x84\x84-i[\x05D<\x86\xaao'
+2026-06-02 11:03:19,925 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-02 11:03:19,926 - hpack.hpack - DEBUG - Decoded (b':status', b'200'), consumed 1
+2026-06-02 11:03:19,927 - hpack.hpack - DEBUG - Decoded 31, consumed 1 bytes
+2026-06-02 11:03:19,927 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 11:03:19,927 - hpack.hpack - DEBUG - Decoded (b'content-type', b'application/json; charset=utf-8'), total consumed 24 bytes, indexed True
+2026-06-02 11:03:19,928 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-02 11:03:19,928 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 11:03:19,928 - hpack.hpack - DEBUG - Decoded (b'x-content-type-options', b'nosniff'), total consumed 24 bytes, indexed True
+2026-06-02 11:03:19,929 - hpack.hpack - DEBUG - Decoded 24, consumed 1 bytes
+2026-06-02 11:03:19,929 - hpack.hpack - DEBUG - Decoded 33, consumed 1 bytes
+2026-06-02 11:03:19,929 - hpack.hpack - DEBUG - Decoded (b'cache-control', b'no-cache, no-store, max-age=0, must-revalidate'), total consumed 35 bytes, indexed True
+2026-06-02 11:03:19,930 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 11:03:19,930 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-02 11:03:19,930 - hpack.hpack - DEBUG - Decoded (b'pragma', b'no-cache'), total consumed 14 bytes, indexed True
+2026-06-02 11:03:19,931 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-02 11:03:19,931 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 11:03:19,932 - hpack.hpack - DEBUG - Decoded (b'expires', b'Mon, 01 Jan 1990 00:00:00 GMT'), total consumed 24 bytes, indexed True
+2026-06-02 11:03:19,932 - hpack.hpack - DEBUG - Decoded 33, consumed 2 bytes
+2026-06-02 11:03:19,932 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 11:03:19,933 - hpack.hpack - DEBUG - Decoded (b'date', b'Tue, 02 Jun 2026 11:03:19 GMT'), total consumed 25 bytes, indexed False
+2026-06-02 11:03:19,933 - hpack.hpack - DEBUG - Decoded 25, consumed 1 bytes
+2026-06-02 11:03:19,933 - hpack.hpack - DEBUG - Decoded 45, consumed 1 bytes
+2026-06-02 11:03:19,934 - hpack.hpack - DEBUG - Decoded (b'content-disposition', b'attachment; filename="json.txt"; filename*=UTF-8\'\'json.txt'), total consumed 47 bytes, indexed True
+2026-06-02 11:03:19,934 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-02 11:03:19,935 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-02 11:03:19,935 - hpack.hpack - DEBUG - Decoded (b'cross-origin-resource-policy', b'cross-origin'), total consumed 32 bytes, indexed True
+2026-06-02 11:03:19,935 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-02 11:03:19,936 - hpack.hpack - DEBUG - Decoded 55, consumed 1 bytes
+2026-06-02 11:03:19,936 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"require-trusted-types-for 'script';report-uri /_/TranslateApiHttp/cspreport"), total consumed 74 bytes, indexed True
+2026-06-02 11:03:19,937 - hpack.hpack - DEBUG - Decoded 62, consumed 1 bytes
+2026-06-02 11:03:19,937 - hpack.hpack - DEBUG - Decoded 128, consumed 2 bytes
+2026-06-02 11:03:19,937 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"script-src 'report-sample' 'nonce-ykiLVwruseHgMPjATsX4JA' 'unsafe-inline';object-src 'none';base-uri 'self';report-uri /_/TranslateApiHttp/cspreport;worker-src 'self'"), total consumed 131 bytes, indexed True
+2026-06-02 11:03:19,938 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-02 11:03:19,938 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-02 11:03:19,939 - hpack.hpack - DEBUG - Decoded (b'cross-origin-opener-policy', b'same-origin'), total consumed 29 bytes, indexed True
+2026-06-02 11:03:19,939 - hpack.hpack - DEBUG - Decoded 13, consumed 1 bytes
+2026-06-02 11:03:19,939 - hpack.hpack - DEBUG - Decoded 129, consumed 2 bytes
+2026-06-02 11:03:19,940 - hpack.hpack - DEBUG - Decoded (b'permissions-policy', b'ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*'), total consumed 146 bytes, indexed True
+2026-06-02 11:03:19,940 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-02 11:03:19,940 - hpack.hpack - DEBUG - Decoded 146, consumed 2 bytes
+2026-06-02 11:03:19,941 - hpack.hpack - DEBUG - Decoded (b'accept-ch', b'Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Model, Sec-CH-UA-WoW64, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version'), total consumed 156 bytes, indexed True
+2026-06-02 11:03:19,941 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-02 11:03:19,942 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-02 11:03:19,942 - hpack.hpack - DEBUG - Decoded (b'access-control-allow-origin', <memory at 0xffff6a65dd80>), total consumed 3 bytes, indexed True
+2026-06-02 11:03:19,942 - hpack.hpack - DEBUG - Decoded 14, consumed 1 bytes
+2026-06-02 11:03:19,943 - hpack.hpack - DEBUG - Decoded 111, consumed 1 bytes
+2026-06-02 11:03:19,943 - hpack.hpack - DEBUG - Decoded (b'reporting-endpoints', b'default="/_/TranslateApiHttp/web-reports?context=eJzj4tDikmJw0JBiEOLh-P7h1wU2gRcv2m8yKykl5RfGlxQl5hXnJJakFqcWlaUWxRsZGJkZmBob6hlYxBcYAABPVxPU"'), total consumed 128 bytes, indexed True
+2026-06-02 11:03:19,943 - hpack.hpack - DEBUG - Decoded 54, consumed 1 bytes
+2026-06-02 11:03:19,944 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-02 11:03:19,944 - hpack.hpack - DEBUG - Decoded (b'server', <memory at 0xffff6a65de40>), total consumed 5 bytes, indexed True
+2026-06-02 11:03:19,944 - hpack.hpack - DEBUG - Decoded 12, consumed 1 bytes
+2026-06-02 11:03:19,945 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-02 11:03:19,945 - hpack.hpack - DEBUG - Decoded (b'x-xss-protection', <memory at 0xffff6a65dfc0>), total consumed 16 bytes, indexed True
+2026-06-02 11:03:19,945 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-02 11:03:19,946 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-02 11:03:19,946 - hpack.hpack - DEBUG - Decoded (b'x-frame-options', b'SAMEORIGIN'), total consumed 23 bytes, indexed True
+2026-06-02 11:03:19,946 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 11:03:19,947 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-02 11:03:19,947 - hpack.hpack - DEBUG - Decoded (b'alt-svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), total consumed 44 bytes, indexed True
+2026-06-02 11:03:19,948 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-02 11:03:19,948 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-02 11:03:19,948 - hpack.hpack - DEBUG - Decoded (b'accept-ranges', b'none'), total consumed 5 bytes, indexed True
+2026-06-02 11:03:19,949 - hpack.hpack - DEBUG - Decoded 59, consumed 1 bytes
+2026-06-02 11:03:19,949 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-02 11:03:19,949 - hpack.hpack - DEBUG - Decoded (b'vary', b'Accept-Encoding'), total consumed 13 bytes, indexed True
+2026-06-02 11:03:19,950 - httpx._client - DEBUG - HTTP Request: GET https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=cat "HTTP/2 200 OK"
+2026-06-02 11:03:20,102 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 11:03:20,102 - python_multipart.multipart - DEBUG - Calling on_header_field with data[36:55]
+2026-06-02 11:03:20,104 - python_multipart.multipart - DEBUG - Calling on_header_value with data[57:88]
+2026-06-02 11:03:20,105 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 11:03:20,106 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 11:03:20,106 - python_multipart.multipart - DEBUG - Calling on_part_data with data[92:163]
+2026-06-02 11:03:20,106 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 11:03:20,106 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 11:03:20,107 - python_multipart.multipart - DEBUG - Calling on_header_field with data[201:220]
+2026-06-02 11:03:20,107 - python_multipart.multipart - DEBUG - Calling on_header_value with data[222:266]
+2026-06-02 11:03:20,108 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 11:03:20,108 - python_multipart.multipart - DEBUG - Calling on_header_field with data[268:280]
+2026-06-02 11:03:20,108 - python_multipart.multipart - DEBUG - Calling on_header_value with data[282:292]
+2026-06-02 11:03:20,108 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 11:03:20,109 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 11:03:20,109 - python_multipart.multipart - DEBUG - Calling on_part_data with data[296:26926]
+2026-06-02 11:03:20,113 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:46712]
+2026-06-02 11:03:20,114 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:262144]
+2026-06-02 11:03:20,114 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:11953]
+2026-06-02 11:03:20,115 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 11:03:20,115 - python_multipart.multipart - DEBUG - Calling on_end with no data
+2026-06-02 11:03:20,146 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket connected: user=dabb7e8b-72a8-4b54-9753-c516c93a1fa0, session=66797f1b-27a4-4bf9-9e0b-d8014f5b37e5, image=None
+2026-06-02 11:03:20,160 - AnalyzeRouter - INFO - WebSocket disconnected: session=66797f1b-27a4-4bf9-9e0b-d8014f5b37e5
+2026-06-02 11:03:20,161 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket disconnected: session=66797f1b-27a4-4bf9-9e0b-d8014f5b37e5
+2026-06-02 11:03:20,199 - server.service.application.tasks.manager - ERROR - Failed to process task a8396a10-9c13-497a-a332-2bc63226d325: Task a8396a10-9c13-497a-a332-2bc63226d325 not found
+Traceback (most recent call last):
+  File "/app/server/service/application/tasks/manager.py", line 127, in _process_task
+    raise RuntimeError(f"Task {task_id} not found")
+RuntimeError: Task a8396a10-9c13-497a-a332-2bc63226d325 not found
+2026-06-02 11:04:23,481 - AuthUserService - INFO - Пользователь ws_complete_1780398263132 зарегистрирован
+2026-06-02 11:04:24,524 - hpack.hpack - DEBUG - HPACK encoding <generator object _check_path_header.<locals>.inner at 0xffff6952f680>
+2026-06-02 11:04:24,524 - hpack.hpack - DEBUG - Adding (b':method', b'GET') to the header table
+2026-06-02 11:04:24,525 - hpack.hpack - DEBUG - Encoding 2 with 7 bits
+2026-06-02 11:04:24,525 - hpack.hpack - DEBUG - Adding (b':authority', b'translate.googleapis.com') to the header table
+2026-06-02 11:04:24,525 - hpack.hpack - DEBUG - Encoding 1 with 6 bits
+2026-06-02 11:04:24,525 - hpack.hpack - DEBUG - Encoding 17 with 7 bits
+2026-06-02 11:04:24,525 - hpack.hpack - DEBUG - Adding (b':scheme', b'https') to the header table
+2026-06-02 11:04:24,526 - hpack.hpack - DEBUG - Encoding 7 with 7 bits
+2026-06-02 11:04:24,526 - hpack.hpack - DEBUG - Adding (b':path', b'/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=cat') to the header table
+2026-06-02 11:04:24,526 - hpack.hpack - DEBUG - Encoding 4 with 6 bits
+2026-06-02 11:04:24,526 - hpack.hpack - DEBUG - Encoding 121 with 7 bits
+2026-06-02 11:04:24,526 - hpack.hpack - DEBUG - Adding (b'accept', b'*/*') to the header table
+2026-06-02 11:04:24,527 - hpack.hpack - DEBUG - Encoding 19 with 6 bits
+2026-06-02 11:04:24,527 - hpack.hpack - DEBUG - Encoding 3 with 7 bits
+2026-06-02 11:04:24,527 - hpack.hpack - DEBUG - Adding (b'accept-encoding', b'gzip, deflate') to the header table
+2026-06-02 11:04:24,527 - hpack.hpack - DEBUG - Encoding 16 with 7 bits
+2026-06-02 11:04:24,528 - hpack.hpack - DEBUG - Adding (b'user-agent', b'Mozilla/5.0 (Windows NT 10.0; Win64; x64)') to the header table
+2026-06-02 11:04:24,528 - hpack.hpack - DEBUG - Encoding 58 with 6 bits
+2026-06-02 11:04:24,528 - hpack.hpack - DEBUG - Encoding 32 with 7 bits
+2026-06-02 11:04:24,528 - hpack.hpack - DEBUG - Encoded header block to b"\x82A\x91M\x83\xa9\x14\r%^c\x9ej\n:\xcc\x85\xc8z\x7f\x87D\xf9a6\x0e\xa4P4\x96!\xb0\x83U5\x05\xff\tA\x8bR`\x99>~\x11D\x05\xab\xe14Ae\xbf\x13\xd1\x05\x96\xfcH\x98\x06\x9f\x89\x13\x04r|H\x98\x0b\xe7\xe2D\xc1D\x9f\x12&\nd\xf8\x910v \xfe$L\x16x\xf8\x910YO\xc4\x89\x81\x08\xf8\x910'\xe0\xc5\x83\x86\xfc+=\xf0r\xc1\xc3~\x15\x9e\xf8:e\x80?\x08Ah\x80\x1f\tAh\x80\x1f\t\xeb\x07\x9f>|\xfcv\x80\x83OS\x83\xf9c\xe7\x90z\xa0\xd0\x7ff\xa2\x81\xb0\xda\xe0S\xfa\xe4j\xa4?\x84)\xa7z\x81\x02\xe0\xfbS\x91\xaaq\xaf\xb5<\xb8\xd7\xf7"
+2026-06-02 11:04:24,831 - hpack.hpack - DEBUG - Decoding b'\x88_\x96\x1du\xd0b\r&=LtA\xea\xfbP\x93\x8e\xc4\x150Z\x99V{@\x90\xf2\xb1\x0fRKRVO\xaa\xca\xb1\xebI\x8fR?\x85\xa8\xe8\xa8\xd2\xcbX\xa1\xa8\xeb\x10d\x9c\xbfJTu\x90\x93\xd8_\xa5)\x1f\x95\x871`\x07\xd2\x94\xda\x84\xada{\x8e\x83H4\x97@\x85\xae\xc1\xcdH\xff\x86\xa8\xeb\x10d\x9c\xbfd\x96\xd0z\xbe\x94\x00T\xca:\x94\x0b\xef\x81@\x02\xe0\x01p\x00S\x16\x8d\xff\x0f\x12\x96\xdfi~\x94\x00\x94\xcbmJ\x08\x02q@\x86\xe0\x1a\xb8&\x94\xc5\xa3\x7fY\xad\x1aR2OIjO\xda\x92\x9a\x82\xd4:K\x07\xf3\xd1\x07\xa9t\xf9O\xf3\xf6\xa4\xa6\xa0\xb5\x0e\x92\xfc\xc1\xc3~\x15\x9e\xff_\xeb\xa2\x0fR\xe9\xf2\x9f@\x8d\xac\xb6Rd \xc7\xa9\x0bVz\x0cO_\xff\x02$\xebZ5\x87a\'\x83\xe7\xe9BN\xb5\xa3Z3&\xa2\xa1\x10|\xfd(I\xd6\xb4kKm\x14-\xdc\xb6 \xc7\xaa\x0f\x9f\xa5\t:\xd6\x8dim\xa2\x85\xbb\x96\xc4\x18\xf5-A\x90\x98>~\x94$\xebZ5\xa9<\x85\xa2\x0f\x9f\xa5\t:\xd6\x8do\x07\xf0\xe3P|\xfd(I\xd6\xb4kJ{)ZQ\x91\'\xb1\x10|\xfd(I\xd6\xb4kW@\xd3)\xec\xa6\x0f\x9f\xa5\t:\xd6\x8dj\xe8\x1ae=\x94\xad\xdc\xb6 \xc7\xaa\x0f\x9f@\x92%\x87B\x16=\x86\x98\xd5,z\xcbQlZ\xb3\xd0bz\x88@\xe9*\xc7\xb0\xd3\x1a\xaf@\x90!\xeaIjJ\xc8)-\xb0\xc9\xf4\xb5g\xa0\xc4\xf5\xff\x01A,5iY\x16\x11O\xf5ak=\x89Y\x03\xa6\xba\x0b\xfe\x94\xffU\x1e\xa2\x15m\xbe\xa4\x7fl8\xafj\xdfU\xfeB\x1f\x88\x99~\x8f^?\xd2\x9f\xea\xda\x909J\xb1\xaa\xa0\xd5\x17\xfd}\x9e>\x85"VE\x84S\xfdTz\x8b\xfe\xbe\xe3\x1a\n\xb5\xb6\x19O\xf4\x82\xd1/\xfa\xfb\xb0\xb5\x9e\xc4\xadm\x86Q\x88\x98\xdf`\xeaE\x03Ia\xac\xd8\xd2\x9a\xd8"+\xb0\xb5\x9e\xc4\xfd\xf8=\x9dKb\xc8\xb0\x8a\x7f\xa4\x16\x89\x7f\xd7~\xb7\xb0\xbd\xad5\x85Y6Z\x84\x96E\x93\xea\xb2\xa1iOb\x9f\xe9\x04\xb0\xd5\xa7\xfd}\xd8Z\xcfbV\xb6\xc3(\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMl\x11\x15\xd8Z\xcfb\x7f@\x86\x19\x08Z\xd2\xb1\'\xff\x13\xdcR-{\x1a\xdc!Z\x1b\t?\xd2\x9b\x8aE\xafc[\x84+]2j*\x11\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xd8m\xa2\x85\xb8\x96\xc4\x18\xf5})\xb8\xa4Z\xf65\xb8B\xb6\x1bh\xa1n%\xb1\x06=Kg2\x13\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xda\x0f!h\xfaSqH\xb5\xeckp\x85nG\xe4\xe3_Jn)\x16\xbd\x8dn\x10\xad\x84\xf6R\xb6\x11\x91\'\xb1\x1fJn)\x16\xbd\x8dn\x10\xad\xae\x81\xa6S\xd9O\xd2\x9b\x8aE\xafc[\x84+k\xa0i\x94\xf6R\xb7\x12\xd8\x83\x1e\xaf@\x94%\x87B\x16=\x86\x98\xd5-aP{l!V\xac\xf4\x18\x9e\xbf\x89%\x87B\x16=\x86\x98\xd5\x7fT\x01*@\x8e\xb0\xb5\x9e\xc4\x9a\xa9\x96-RVsT\x94\x7f\xef\x90\xb2\x8e\xda\x13\x07\xf2\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMlx,kXZ\xcfbQ\xfe\x10\xf5$\xbeS\x01r\xfb\xe8\xd2o\x9b\xad9|\x03\xf6\xe9\xb0j\xcf8\xb5\xe3\xf2\x1f\x1c\x056\xce\xf6q\xec\x1ax\xd1\x977\xa3-\xa3?\xaa3{\xbd\xdfV\xed\xder\xe7\xe0\xd2suBM\xd0\x9e\xb4_\xc9\xefE\xfe\x02\r\xfd^\ry\xef\x10\xc3\x08\xbfv\xe8\x7f\xf9v\x03ESF@\x8c\xf2\xb7\x94!j\xec:JD\x98\xf5\x7f\x010@\x8b\xf2\xb4\xb6\x0e\x92\xacz\xd2c\xd4\x8f\x89\xdd\x0e\x8c\x1a\xb6\xe4\xc5\x93O@\x85\x1d\tY\x1d\xc9\xa4\x9d\x98?\x9b\x8d4\xcf\xf3\xf6\xa5#\x80M\xbe \x00\x1fS\xb2\xb0\x9f\x83\xf9\xb8\xd3L\xff?jR8\x04\xdb\xe2\x00\x01R\x83\xa8\xf5\x17{\x8b\x84\x84-i[\x05D<\x86\xaao'
+2026-06-02 11:04:24,832 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-02 11:04:24,833 - hpack.hpack - DEBUG - Decoded (b':status', b'200'), consumed 1
+2026-06-02 11:04:24,833 - hpack.hpack - DEBUG - Decoded 31, consumed 1 bytes
+2026-06-02 11:04:24,834 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 11:04:24,834 - hpack.hpack - DEBUG - Decoded (b'content-type', b'application/json; charset=utf-8'), total consumed 24 bytes, indexed True
+2026-06-02 11:04:24,834 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-02 11:04:24,835 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 11:04:24,835 - hpack.hpack - DEBUG - Decoded (b'x-content-type-options', b'nosniff'), total consumed 24 bytes, indexed True
+2026-06-02 11:04:24,835 - hpack.hpack - DEBUG - Decoded 24, consumed 1 bytes
+2026-06-02 11:04:24,835 - hpack.hpack - DEBUG - Decoded 33, consumed 1 bytes
+2026-06-02 11:04:24,836 - hpack.hpack - DEBUG - Decoded (b'cache-control', b'no-cache, no-store, max-age=0, must-revalidate'), total consumed 35 bytes, indexed True
+2026-06-02 11:04:24,836 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 11:04:24,836 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-02 11:04:24,836 - hpack.hpack - DEBUG - Decoded (b'pragma', b'no-cache'), total consumed 14 bytes, indexed True
+2026-06-02 11:04:24,837 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-02 11:04:24,837 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 11:04:24,837 - hpack.hpack - DEBUG - Decoded (b'expires', b'Mon, 01 Jan 1990 00:00:00 GMT'), total consumed 24 bytes, indexed True
+2026-06-02 11:04:24,837 - hpack.hpack - DEBUG - Decoded 33, consumed 2 bytes
+2026-06-02 11:04:24,838 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-02 11:04:24,838 - hpack.hpack - DEBUG - Decoded (b'date', b'Tue, 02 Jun 2026 11:04:24 GMT'), total consumed 25 bytes, indexed False
+2026-06-02 11:04:24,838 - hpack.hpack - DEBUG - Decoded 25, consumed 1 bytes
+2026-06-02 11:04:24,838 - hpack.hpack - DEBUG - Decoded 45, consumed 1 bytes
+2026-06-02 11:04:24,838 - hpack.hpack - DEBUG - Decoded (b'content-disposition', b'attachment; filename="json.txt"; filename*=UTF-8\'\'json.txt'), total consumed 47 bytes, indexed True
+2026-06-02 11:04:24,839 - hpack.hpack - DEBUG - Decoded 13, consumed 1 bytes
+2026-06-02 11:04:24,839 - hpack.hpack - DEBUG - Decoded 129, consumed 2 bytes
+2026-06-02 11:04:24,839 - hpack.hpack - DEBUG - Decoded (b'permissions-policy', b'ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*'), total consumed 146 bytes, indexed True
+2026-06-02 11:04:24,840 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-02 11:04:24,840 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-02 11:04:24,840 - hpack.hpack - DEBUG - Decoded (b'cross-origin-opener-policy', b'same-origin'), total consumed 29 bytes, indexed True
+2026-06-02 11:04:24,840 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-02 11:04:24,841 - hpack.hpack - DEBUG - Decoded 128, consumed 2 bytes
+2026-06-02 11:04:24,841 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"script-src 'report-sample' 'nonce-Ryd9RAGCOTnDW2aw_39lyw' 'unsafe-inline';object-src 'none';base-uri 'self';report-uri /_/TranslateApiHttp/cspreport;worker-src 'self'"), total consumed 148 bytes, indexed True
+2026-06-02 11:04:24,841 - hpack.hpack - DEBUG - Decoded 62, consumed 1 bytes
+2026-06-02 11:04:24,842 - hpack.hpack - DEBUG - Decoded 55, consumed 1 bytes
+2026-06-02 11:04:24,842 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"require-trusted-types-for 'script';report-uri /_/TranslateApiHttp/cspreport"), total consumed 57 bytes, indexed True
+2026-06-02 11:04:24,842 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-02 11:04:24,843 - hpack.hpack - DEBUG - Decoded 146, consumed 2 bytes
+2026-06-02 11:04:24,843 - hpack.hpack - DEBUG - Decoded (b'accept-ch', b'Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Model, Sec-CH-UA-WoW64, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version'), total consumed 156 bytes, indexed True
+2026-06-02 11:04:24,843 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-02 11:04:24,844 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-02 11:04:24,844 - hpack.hpack - DEBUG - Decoded (b'cross-origin-resource-policy', b'cross-origin'), total consumed 32 bytes, indexed True
+2026-06-02 11:04:24,844 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-02 11:04:24,844 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-02 11:04:24,845 - hpack.hpack - DEBUG - Decoded (b'access-control-allow-origin', <memory at 0xffff6a65c580>), total consumed 3 bytes, indexed True
+2026-06-02 11:04:24,845 - hpack.hpack - DEBUG - Decoded 14, consumed 1 bytes
+2026-06-02 11:04:24,845 - hpack.hpack - DEBUG - Decoded 111, consumed 1 bytes
+2026-06-02 11:04:24,845 - hpack.hpack - DEBUG - Decoded (b'reporting-endpoints', b'default="/_/TranslateApiHttp/web-reports?context=eJzj4tDikmJw0ZBiEOLh2PHx1wU2gQvrVq1mVlJKyi-MLylKzCvOSSxJLU4tKkstijcyMDIzMDU21DOwiC8wAAA2ZRM9"'), total consumed 128 bytes, indexed True
+2026-06-02 11:04:24,846 - hpack.hpack - DEBUG - Decoded 54, consumed 1 bytes
+2026-06-02 11:04:24,846 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-02 11:04:24,846 - hpack.hpack - DEBUG - Decoded (b'server', <memory at 0xffff6a65d9c0>), total consumed 5 bytes, indexed True
+2026-06-02 11:04:24,846 - hpack.hpack - DEBUG - Decoded 12, consumed 1 bytes
+2026-06-02 11:04:24,847 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-02 11:04:24,847 - hpack.hpack - DEBUG - Decoded (b'x-xss-protection', <memory at 0xffff6a65d3c0>), total consumed 16 bytes, indexed True
+2026-06-02 11:04:24,847 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-02 11:04:24,847 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-02 11:04:24,848 - hpack.hpack - DEBUG - Decoded (b'x-frame-options', b'SAMEORIGIN'), total consumed 23 bytes, indexed True
+2026-06-02 11:04:24,848 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-02 11:04:24,848 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-02 11:04:24,848 - hpack.hpack - DEBUG - Decoded (b'alt-svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), total consumed 44 bytes, indexed True
+2026-06-02 11:04:24,849 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-02 11:04:24,849 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-02 11:04:24,849 - hpack.hpack - DEBUG - Decoded (b'accept-ranges', b'none'), total consumed 5 bytes, indexed True
+2026-06-02 11:04:24,849 - hpack.hpack - DEBUG - Decoded 59, consumed 1 bytes
+2026-06-02 11:04:24,850 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-02 11:04:24,850 - hpack.hpack - DEBUG - Decoded (b'vary', b'Accept-Encoding'), total consumed 13 bytes, indexed True
+2026-06-02 11:04:24,851 - httpx._client - DEBUG - HTTP Request: GET https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=cat "HTTP/2 200 OK"
+2026-06-02 11:04:25,004 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 11:04:25,005 - python_multipart.multipart - DEBUG - Calling on_header_field with data[36:55]
+2026-06-02 11:04:25,006 - python_multipart.multipart - DEBUG - Calling on_header_value with data[57:88]
+2026-06-02 11:04:25,006 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 11:04:25,007 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 11:04:25,007 - python_multipart.multipart - DEBUG - Calling on_part_data with data[92:163]
+2026-06-02 11:04:25,007 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 11:04:25,008 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-02 11:04:25,008 - python_multipart.multipart - DEBUG - Calling on_header_field with data[201:220]
+2026-06-02 11:04:25,008 - python_multipart.multipart - DEBUG - Calling on_header_value with data[222:266]
+2026-06-02 11:04:25,009 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 11:04:25,009 - python_multipart.multipart - DEBUG - Calling on_header_field with data[268:280]
+2026-06-02 11:04:25,009 - python_multipart.multipart - DEBUG - Calling on_header_value with data[282:292]
+2026-06-02 11:04:25,010 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-02 11:04:25,011 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-02 11:04:25,014 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:26064]
+2026-06-02 11:04:25,016 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:122384]
+2026-06-02 11:04:25,018 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:122384]
+2026-06-02 11:04:25,018 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:76607]
+2026-06-02 11:04:25,019 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-02 11:04:25,019 - python_multipart.multipart - DEBUG - Calling on_end with no data
+2026-06-02 11:04:25,064 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket connected: user=8eefbb0c-aca1-4173-8821-abf8d61b9420, session=4ae26848-d626-4002-9cb5-bd0ba18cc46b, image=None
+2026-06-02 11:04:25,419 - AnalyzeRouter - INFO - WebSocket disconnected: session=4ae26848-d626-4002-9cb5-bd0ba18cc46b
+2026-06-02 11:04:25,419 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket disconnected: session=4ae26848-d626-4002-9cb5-bd0ba18cc46b
+2026-06-02 13:26:10,784 - passlib.handlers.bcrypt - DEBUG - trapped unexpected response from 'os_crypt' backend: verify('test', b'$2$04$5BJqKfqMQvV7nS.yUguNcuRfMMOXK0xPWavM7pOzjEi5ze5T1k8/S'):
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 303, in safe_verify
+    return verify(secret, hash)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 837, in _calc_checksum
+    raise uh.exc.InternalBackendError(
+passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passlib recommends running `pip install bcrypt` for general bcrypt support.(config=<hash <class 'str'> value omitted>, secret=<hash <class 'bytes'> value omitted>)
+2026-06-02 13:26:10,792 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
+2026-06-02 13:26:11,053 - AuthUserService - INFO - Пользователь wstest зарегистрирован
+2026-06-02 13:26:35,137 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket connected: user=39e3e64d-5957-42e7-94d9-469652b90330, session=2443d7f3-ad8c-4348-9623-c756d8ad3666, image=None
+2026-06-02 13:26:35,141 - AnalyzeRouter - INFO - WebSocket disconnected: session=2443d7f3-ad8c-4348-9623-c756d8ad3666
+2026-06-02 13:26:35,141 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket disconnected: session=2443d7f3-ad8c-4348-9623-c756d8ad3666
+2026-06-02 13:27:11,794 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-06-02 13:27:11,883 - ImageRouter - INFO - Загрузка изображений для проекта 20c8f7b0-8947-4483-a74d-d8a3a00df9a8
+2026-06-02 13:28:42,267 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket connected: user=39e3e64d-5957-42e7-94d9-469652b90330, session=e6e974f0-33e2-4be1-aa68-bc5aa41be0c9, image=None
+2026-06-02 13:28:42,276 - AnalyzeRouter - INFO - WebSocket disconnected: session=e6e974f0-33e2-4be1-aa68-bc5aa41be0c9
+2026-06-02 13:28:42,278 - server.service.integrations.websocket.websocket_manager - INFO - WebSocket disconnected: session=e6e974f0-33e2-4be1-aa68-bc5aa41be0c9
+2026-06-02 13:31:31,933 - AuthUserService - DEBUG - Не найден refresh токен
+2026-06-02 13:31:31,948 - AuthUserService - DEBUG - Не найден refresh токен
+2026-06-03 13:53:37,056 - passlib.handlers.bcrypt - DEBUG - trapped unexpected response from 'os_crypt' backend: verify('test', b'$2$04$5BJqKfqMQvV7nS.yUguNcuRfMMOXK0xPWavM7pOzjEi5ze5T1k8/S'):
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 303, in safe_verify
+    return verify(secret, hash)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/passlib/handlers/bcrypt.py", line 837, in _calc_checksum
+    raise uh.exc.InternalBackendError(
+passlib.exc.InternalBackendError: crypt.crypt() failed for unknown reason; passlib recommends running `pip install bcrypt` for general bcrypt support.(config=<hash <class 'str'> value omitted>, secret=<hash <class 'bytes'> value omitted>)
+2026-06-03 13:53:37,063 - passlib.handlers.bcrypt - DEBUG - 'os_crypt' backend lacks $2$ support, enabling workaround
+2026-06-03 13:53:57,373 - ImageRouter - INFO - Загрузка изображений для проекта 6cfc651d-238d-43e0-99fd-92ca5fd3ab0f
+2026-06-03 13:53:57,448 - ImageRouter - INFO - Загрузка изображений для проекта 6cfc651d-238d-43e0-99fd-92ca5fd3ab0f
+2026-06-03 13:54:10,845 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-03 13:54:10,846 - python_multipart.multipart - DEBUG - Calling on_header_field with data[42:61]
+2026-06-03 13:54:10,847 - python_multipart.multipart - DEBUG - Calling on_header_value with data[63:94]
+2026-06-03 13:54:10,847 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-03 13:54:10,847 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-03 13:54:10,848 - python_multipart.multipart - DEBUG - Calling on_part_data with data[98:171]
+2026-06-03 13:54:10,848 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-03 13:54:10,848 - python_multipart.multipart - DEBUG - Calling on_part_begin with no data
+2026-06-03 13:54:10,848 - python_multipart.multipart - DEBUG - Calling on_header_field with data[215:234]
+2026-06-03 13:54:10,849 - python_multipart.multipart - DEBUG - Calling on_header_value with data[236:280]
+2026-06-03 13:54:10,849 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-03 13:54:10,849 - python_multipart.multipart - DEBUG - Calling on_header_field with data[282:294]
+2026-06-03 13:54:10,849 - python_multipart.multipart - DEBUG - Calling on_header_value with data[296:306]
+2026-06-03 13:54:10,850 - python_multipart.multipart - DEBUG - Calling on_header_end with no data
+2026-06-03 13:54:10,850 - python_multipart.multipart - DEBUG - Calling on_headers_finished with no data
+2026-06-03 13:54:10,851 - python_multipart.multipart - DEBUG - Calling on_part_data with data[310:138137]
+2026-06-03 13:54:10,852 - python_multipart.multipart - DEBUG - Calling on_part_data with data[0:209612]
+2026-06-03 13:54:10,852 - python_multipart.multipart - DEBUG - Calling on_part_end with no data
+2026-06-03 13:54:10,853 - python_multipart.multipart - DEBUG - Calling on_end with no data
+2026-06-03 13:54:12,933 - ImageRouter - INFO - Загрузка изображений для проекта 6cfc651d-238d-43e0-99fd-92ca5fd3ab0f
+2026-06-03 13:54:12,964 - ImageRouter - INFO - Загрузка изображений для проекта 6cfc651d-238d-43e0-99fd-92ca5fd3ab0f
+2026-06-03 13:55:00,896 - hpack.hpack - DEBUG - HPACK encoding <generator object _check_path_header.<locals>.inner at 0xffff586e02e0>
+2026-06-03 13:55:00,899 - hpack.hpack - DEBUG - Adding (b':method', b'GET') to the header table
+2026-06-03 13:55:00,900 - hpack.hpack - DEBUG - Encoding 2 with 7 bits
+2026-06-03 13:55:00,901 - hpack.hpack - DEBUG - Adding (b':authority', b'translate.googleapis.com') to the header table
+2026-06-03 13:55:00,902 - hpack.hpack - DEBUG - Encoding 1 with 6 bits
+2026-06-03 13:55:00,902 - hpack.hpack - DEBUG - Encoding 17 with 7 bits
+2026-06-03 13:55:00,903 - hpack.hpack - DEBUG - Adding (b':scheme', b'https') to the header table
+2026-06-03 13:55:00,903 - hpack.hpack - DEBUG - Encoding 7 with 7 bits
+2026-06-03 13:55:00,904 - hpack.hpack - DEBUG - Adding (b':path', b'/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=1') to the header table
+2026-06-03 13:55:00,904 - hpack.hpack - DEBUG - Encoding 4 with 6 bits
+2026-06-03 13:55:00,904 - hpack.hpack - DEBUG - Encoding 120 with 7 bits
+2026-06-03 13:55:00,905 - hpack.hpack - DEBUG - Adding (b'accept', b'*/*') to the header table
+2026-06-03 13:55:00,905 - hpack.hpack - DEBUG - Encoding 19 with 6 bits
+2026-06-03 13:55:00,905 - hpack.hpack - DEBUG - Encoding 3 with 7 bits
+2026-06-03 13:55:00,906 - hpack.hpack - DEBUG - Adding (b'accept-encoding', b'gzip, deflate') to the header table
+2026-06-03 13:55:00,906 - hpack.hpack - DEBUG - Encoding 16 with 7 bits
+2026-06-03 13:55:00,906 - hpack.hpack - DEBUG - Adding (b'user-agent', b'Mozilla/5.0 (Windows NT 10.0; Win64; x64)') to the header table
+2026-06-03 13:55:00,907 - hpack.hpack - DEBUG - Encoding 58 with 6 bits
+2026-06-03 13:55:00,907 - hpack.hpack - DEBUG - Encoding 32 with 7 bits
+2026-06-03 13:55:00,907 - hpack.hpack - DEBUG - Encoded header block to b"\x82A\x91M\x83\xa9\x14\r%^c\x9ej\n:\xcc\x85\xc8z\x7f\x87D\xf8a6\x0e\xa4P4\x96!\xb0\x83U5\x05\xff\tA\x8bR`\x99>~\x11D\x05\xab\xe14Ae\xbf\x13\xd1\x05\x96\xfcH\x98\x06\x9f\x89\x13\x04r|H\x98\x0b\xe7\xe2D\xc1D\x9f\x12&\nd\xf8\x910v \xfe$L\x16x\xf8\x910YO\xc4\x89\x81\x08\xf8\x910'\xe0\xc5\x83\x86\xfc+=\xf0r\xc1\xc3~\x15\x9e\xf8:e\x80?\x08Ah\x80\x1f\tAh\x80\x1f\t\xeb\x07\x9f>|\xfcv\x80?S\x83\xf9c\xe7\x90z\xa0\xd0\x7ff\xa2\x81\xb0\xda\xe0S\xfa\xe4j\xa4?\x84)\xa7z\x81\x02\xe0\xfbS\x91\xaaq\xaf\xb5<\xb8\xd7\xf7"
+2026-06-03 13:55:01,377 - hpack.hpack - DEBUG - HPACK encoding <generator object _check_path_header.<locals>.inner at 0xffff5854b3e0>
+2026-06-03 13:55:01,377 - hpack.hpack - DEBUG - Adding (b':method', b'GET') to the header table
+2026-06-03 13:55:01,378 - hpack.hpack - DEBUG - Encoding 2 with 7 bits
+2026-06-03 13:55:01,378 - hpack.hpack - DEBUG - Adding (b':authority', b'translate.googleapis.com') to the header table
+2026-06-03 13:55:01,378 - hpack.hpack - DEBUG - Encoding 1 with 6 bits
+2026-06-03 13:55:01,379 - hpack.hpack - DEBUG - Encoding 17 with 7 bits
+2026-06-03 13:55:01,379 - hpack.hpack - DEBUG - Adding (b':scheme', b'https') to the header table
+2026-06-03 13:55:01,380 - hpack.hpack - DEBUG - Encoding 7 with 7 bits
+2026-06-03 13:55:01,380 - hpack.hpack - DEBUG - Adding (b':path', b'/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=1') to the header table
+2026-06-03 13:55:01,381 - hpack.hpack - DEBUG - Encoding 4 with 6 bits
+2026-06-03 13:55:01,381 - hpack.hpack - DEBUG - Encoding 120 with 7 bits
+2026-06-03 13:55:01,382 - hpack.hpack - DEBUG - Adding (b'accept', b'*/*') to the header table
+2026-06-03 13:55:01,382 - hpack.hpack - DEBUG - Encoding 19 with 6 bits
+2026-06-03 13:55:01,383 - hpack.hpack - DEBUG - Encoding 3 with 7 bits
+2026-06-03 13:55:01,383 - hpack.hpack - DEBUG - Adding (b'accept-encoding', b'gzip, deflate') to the header table
+2026-06-03 13:55:01,383 - hpack.hpack - DEBUG - Encoding 16 with 7 bits
+2026-06-03 13:55:01,383 - hpack.hpack - DEBUG - Adding (b'user-agent', b'Mozilla/5.0 (Windows NT 10.0; Win64; x64)') to the header table
+2026-06-03 13:55:01,384 - hpack.hpack - DEBUG - Encoding 58 with 6 bits
+2026-06-03 13:55:01,384 - hpack.hpack - DEBUG - Encoding 32 with 7 bits
+2026-06-03 13:55:01,384 - hpack.hpack - DEBUG - Encoded header block to b"\x82A\x91M\x83\xa9\x14\r%^c\x9ej\n:\xcc\x85\xc8z\x7f\x87D\xf8a6\x0e\xa4P4\x96!\xb0\x83U5\x05\xff\tA\x8bR`\x99>~\x11D\x05\xab\xe14Ae\xbf\x13\xd1\x05\x96\xfcH\x98\x06\x9f\x89\x13\x04r|H\x98\x0b\xe7\xe2D\xc1D\x9f\x12&\nd\xf8\x910v \xfe$L\x16x\xf8\x910YO\xc4\x89\x81\x08\xf8\x910'\xe0\xc5\x83\x86\xfc+=\xf0r\xc1\xc3~\x15\x9e\xf8:e\x80?\x08Ah\x80\x1f\tAh\x80\x1f\t\xeb\x07\x9f>|\xfcv\x80?S\x83\xf9c\xe7\x90z\xa0\xd0\x7ff\xa2\x81\xb0\xda\xe0S\xfa\xe4j\xa4?\x84)\xa7z\x81\x02\xe0\xfbS\x91\xaaq\xaf\xb5<\xb8\xd7\xf7"
+2026-06-03 13:55:01,788 - hpack.hpack - DEBUG - Decoding b'\x88_\x96\x1du\xd0b\r&=LtA\xea\xfbP\x93\x8e\xc4\x150Z\x99V{@\x90\xf2\xb1\x0fRKRVO\xaa\xca\xb1\xebI\x8fR?\x85\xa8\xe8\xa8\xd2\xcbX\xa1\xa8\xeb\x10d\x9c\xbfJTu\x90\x93\xd8_\xa5)\x1f\x95\x871`\x07\xd2\x94\xda\x84\xada{\x8e\x83H4\x97@\x85\xae\xc1\xcdH\xff\x86\xa8\xeb\x10d\x9c\xbfd\x96\xd0z\xbe\x94\x00T\xca:\x94\x0b\xef\x81@\x02\xe0\x01p\x00S\x16\x8d\xff\x0f\x12\x96\xe4Y>\x94\x03*e\xb6\xa5\x04\x018\xa0Y\xb8\xdbw\x00\x151h\xdfY\xad\x1aR2OIjO\xda\x92\x9a\x82\xd4:K\x07\xf3\xd1\x07\xa9t\xf9O\xf3\xf6\xa4\xa6\xa0\xb5\x0e\x92\xfc\xc1\xc3~\x15\x9e\xff_\xeb\xa2\x0fR\xe9\xf2\x9f@\x90!\xeaIjJ\xc8)-\xb0\xc9\xf4\xb5g\xa0\xc4\xf5\xb7\xb0\xbd\xad5\x85Y6Z\x84\x96E\x93\xea\xb2\xa1iOb\x9f\xe9\x04\xb0\xd5\xa7\xfd}\xd8Z\xcfbV\xb6\xc3(\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMl\x11\x15\xd8Z\xcfb\x7f~\xff\x01A,5iY\x16\x11O\xf5ak=\x89Y\x03\xa6\xba\x0b\xfe\x94\xffU\x1e\xa2\x15l\xbe\xe6\xd3\xbd#\x97\x19\xba\x1b>\x9e\xdf\x9eQ[\xc9\xf1\xfe\x94\xffV\xd4\x81\xcaU\x8dU\x06\xa8\xbf\xeb\xec\xf1\xf4)\x12\xb2,"\x9f\xea\xa3\xd4_\xf5\xf7\x18\xd0U\xad\xb0\xca\x7f\xa4\x16\x89\x7f\xd7\xdd\x85\xac\xf6%kl2\x8cD\xc6\xfb\x07R(\x1aK\rf\xc6\x94\xd6\xc1\x11]\x85\xac\xf6\'\xef\xc1\xec\xea[\x16E\x84S\xfd \xb4K\xfe\xbf@\x86\x19\x08Z\xd2\xb1\'\xff\x13\xdcR-{\x1a\xdc!Z\x1b\t?\xd2\x9b\x8aE\xafc[\x84+]2j*\x11\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xd8m\xa2\x85\xb8\x96\xc4\x18\xf5})\xb8\xa4Z\xf65\xb8B\xb6\x1bh\xa1n%\xb1\x06=Kg2\x13\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xda\x0f!h\xfaSqH\xb5\xeckp\x85nG\xe4\xe3_Jn)\x16\xbd\x8dn\x10\xad\x84\xf6R\xb6\x11\x91\'\xb1\x1fJn)\x16\xbd\x8dn\x10\xad\xae\x81\xa6S\xd9O\xd2\x9b\x8aE\xafc[\x84+k\xa0i\x94\xf6R\xb7\x12\xd8\x83\x1e\xaf@\x94%\x87B\x16=\x86\x98\xd5-aP{l!V\xac\xf4\x18\x9e\xbf\x89%\x87B\x16=\x86\x98\xd5\x7f@\x92%\x87B\x16=\x86\x98\xd5,z\xcbQlZ\xb3\xd0bz\x88@\xe9*\xc7\xb0\xd3\x1a\xaf@\x8d\xac\xb6Rd \xc7\xa9\x0bVz\x0cO_\xff\x02$\xebZ5\x87a\'\x83\xe7\xe9BN\xb5\xa3Z3&\xa2\xa1\x10|\xfd(I\xd6\xb4kKm\x14-\xdc\xb6 \xc7\xaa\x0f\x9f\xa5\t:\xd6\x8dim\xa2\x85\xbb\x96\xc4\x18\xf5-A\x90\x98>~\x94$\xebZ5\xa9<\x85\xa2\x0f\x9f\xa5\t:\xd6\x8do\x07\xf0\xe3P|\xfd(I\xd6\xb4kJ{)ZQ\x91\'\xb1\x10|\xfd(I\xd6\xb4kW@\xd3)\xec\xa6\x0f\x9f\xa5\t:\xd6\x8dj\xe8\x1ae=\x94\xad\xdc\xb6 \xc7\xaa\x0f\x9fT\x01*@\x8e\xb0\xb5\x9e\xc4\x9a\xa9\x96-RVsT\x94\x7f\xf6\x90\xb2\x8e\xda\x13\x07\xf2\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMlx,kXZ\xcfbQ\xfe\x10\xf5$\xbeS\x01r\xfb\xe9\x817\xcd\xd6\x9c\xfe\x02\xdd\xd3h\x84\x19\x7fq\xe8\xc5\xcc\xd8\x0b\xd3\xb0u\xe23\x9e\xafr\xf5\xcc^\xfbg\xe5\xc3\xady\xa3{\xc7~\xdb\x0f\xa0o5\x95\xdc\x1dS\xbc\xc1\xed{\xd0siw\'\x8d\x1d4x\xd1\xee\x1e\x1a"\x87^wa\x86\x1b\xaf\xe1\x9fe\x9f\xcfv\x03ESF@\x8c\xf2\xb7\x94!j\xec:JD\x98\xf5\x7f\x010@\x8b\xf2\xb4\xb6\x0e\x92\xacz\xd2c\xd4\x8f\x89\xdd\x0e\x8c\x1a\xb6\xe4\xc5\x93O@\x85\x1d\tY\x1d\xc9\xa4\x9d\x98?\x9b\x8d4\xcf\xf3\xf6\xa5#\x80M\xbe \x00\x1fS\xb2\xb0\x9f\x83\xf9\xb8\xd3L\xff?jR8\x04\xdb\xe2\x00\x01R\x83\xa8\xf5\x17{\x8b\x84\x84-i[\x05D<\x86\xaao'
+2026-06-03 13:55:01,790 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-03 13:55:01,790 - hpack.hpack - DEBUG - Decoded (b':status', b'200'), consumed 1
+2026-06-03 13:55:01,791 - hpack.hpack - DEBUG - Decoded 31, consumed 1 bytes
+2026-06-03 13:55:01,791 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-03 13:55:01,792 - hpack.hpack - DEBUG - Decoded (b'content-type', b'application/json; charset=utf-8'), total consumed 24 bytes, indexed True
+2026-06-03 13:55:01,792 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-03 13:55:01,792 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-03 13:55:01,793 - hpack.hpack - DEBUG - Decoded (b'x-content-type-options', b'nosniff'), total consumed 24 bytes, indexed True
+2026-06-03 13:55:01,793 - hpack.hpack - DEBUG - Decoded 24, consumed 1 bytes
+2026-06-03 13:55:01,793 - hpack.hpack - DEBUG - Decoded 33, consumed 1 bytes
+2026-06-03 13:55:01,793 - hpack.hpack - DEBUG - Decoded (b'cache-control', b'no-cache, no-store, max-age=0, must-revalidate'), total consumed 35 bytes, indexed True
+2026-06-03 13:55:01,794 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-03 13:55:01,794 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-03 13:55:01,794 - hpack.hpack - DEBUG - Decoded (b'pragma', b'no-cache'), total consumed 14 bytes, indexed True
+2026-06-03 13:55:01,794 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-03 13:55:01,795 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-03 13:55:01,795 - hpack.hpack - DEBUG - Decoded (b'expires', b'Mon, 01 Jan 1990 00:00:00 GMT'), total consumed 24 bytes, indexed True
+2026-06-03 13:55:01,795 - hpack.hpack - DEBUG - Decoded 33, consumed 2 bytes
+2026-06-03 13:55:01,795 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-03 13:55:01,795 - hpack.hpack - DEBUG - Decoded (b'date', b'Wed, 03 Jun 2026 13:55:01 GMT'), total consumed 25 bytes, indexed False
+2026-06-03 13:55:01,796 - hpack.hpack - DEBUG - Decoded 25, consumed 1 bytes
+2026-06-03 13:55:01,796 - hpack.hpack - DEBUG - Decoded 45, consumed 1 bytes
+2026-06-03 13:55:01,796 - hpack.hpack - DEBUG - Decoded (b'content-disposition', b'attachment; filename="json.txt"; filename*=UTF-8\'\'json.txt'), total consumed 47 bytes, indexed True
+2026-06-03 13:55:01,797 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-03 13:55:01,797 - hpack.hpack - DEBUG - Decoded 55, consumed 1 bytes
+2026-06-03 13:55:01,797 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"require-trusted-types-for 'script';report-uri /_/TranslateApiHttp/cspreport"), total consumed 74 bytes, indexed True
+2026-06-03 13:55:01,798 - hpack.hpack - DEBUG - Decoded 62, consumed 1 bytes
+2026-06-03 13:55:01,798 - hpack.hpack - DEBUG - Decoded 128, consumed 2 bytes
+2026-06-03 13:55:01,798 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"script-src 'report-sample' 'nonce-JzgNTtafHijiLNqXxsp8tw' 'unsafe-inline';object-src 'none';base-uri 'self';report-uri /_/TranslateApiHttp/cspreport;worker-src 'self'"), total consumed 131 bytes, indexed True
+2026-06-03 13:55:01,799 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-03 13:55:01,799 - hpack.hpack - DEBUG - Decoded 146, consumed 2 bytes
+2026-06-03 13:55:01,799 - hpack.hpack - DEBUG - Decoded (b'accept-ch', b'Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Model, Sec-CH-UA-WoW64, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version'), total consumed 156 bytes, indexed True
+2026-06-03 13:55:01,800 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-03 13:55:01,800 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-03 13:55:01,800 - hpack.hpack - DEBUG - Decoded (b'cross-origin-resource-policy', b'cross-origin'), total consumed 32 bytes, indexed True
+2026-06-03 13:55:01,801 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-03 13:55:01,801 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-03 13:55:01,801 - hpack.hpack - DEBUG - Decoded (b'cross-origin-opener-policy', b'same-origin'), total consumed 29 bytes, indexed True
+2026-06-03 13:55:01,801 - hpack.hpack - DEBUG - Decoded 13, consumed 1 bytes
+2026-06-03 13:55:01,802 - hpack.hpack - DEBUG - Decoded 129, consumed 2 bytes
+2026-06-03 13:55:01,802 - hpack.hpack - DEBUG - Decoded (b'permissions-policy', b'ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*'), total consumed 146 bytes, indexed True
+2026-06-03 13:55:01,802 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-03 13:55:01,802 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-03 13:55:01,802 - hpack.hpack - DEBUG - Decoded (b'access-control-allow-origin', <memory at 0xffff586c5000>), total consumed 3 bytes, indexed True
+2026-06-03 13:55:01,803 - hpack.hpack - DEBUG - Decoded 14, consumed 1 bytes
+2026-06-03 13:55:01,803 - hpack.hpack - DEBUG - Decoded 118, consumed 1 bytes
+2026-06-03 13:55:01,803 - hpack.hpack - DEBUG - Decoded (b'reporting-endpoints', b'default="/_/TranslateApiHttp/web-reports?context=eJzjEtDikmLw15BiMA0JZHMGYiEejq1PGi6yCWyY2zqLWUkpKb8wvqQoMa84J7EktTi1qCy1KN7IwMjMwMzAUM_APL7AAAB9FhQr"'), total consumed 135 bytes, indexed True
+2026-06-03 13:55:01,803 - hpack.hpack - DEBUG - Decoded 54, consumed 1 bytes
+2026-06-03 13:55:01,803 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-03 13:55:01,804 - hpack.hpack - DEBUG - Decoded (b'server', <memory at 0xffff586c5180>), total consumed 5 bytes, indexed True
+2026-06-03 13:55:01,804 - hpack.hpack - DEBUG - Decoded 12, consumed 1 bytes
+2026-06-03 13:55:01,804 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-03 13:55:01,804 - hpack.hpack - DEBUG - Decoded (b'x-xss-protection', <memory at 0xffff586c53c0>), total consumed 16 bytes, indexed True
+2026-06-03 13:55:01,805 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-03 13:55:01,806 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-03 13:55:01,806 - hpack.hpack - DEBUG - Decoded (b'x-frame-options', b'SAMEORIGIN'), total consumed 23 bytes, indexed True
+2026-06-03 13:55:01,807 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-03 13:55:01,807 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-03 13:55:01,807 - hpack.hpack - DEBUG - Decoded (b'alt-svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), total consumed 44 bytes, indexed True
+2026-06-03 13:55:01,807 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-03 13:55:01,807 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-03 13:55:01,808 - hpack.hpack - DEBUG - Decoded (b'accept-ranges', b'none'), total consumed 5 bytes, indexed True
+2026-06-03 13:55:01,808 - hpack.hpack - DEBUG - Decoded 59, consumed 1 bytes
+2026-06-03 13:55:01,809 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-03 13:55:01,809 - hpack.hpack - DEBUG - Decoded (b'vary', b'Accept-Encoding'), total consumed 13 bytes, indexed True
+2026-06-03 13:55:01,810 - httpx._client - DEBUG - HTTP Request: GET https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=1 "HTTP/2 200 OK"
+2026-06-03 13:55:02,218 - hpack.hpack - DEBUG - Decoding b'\x88_\x96\x1du\xd0b\r&=LtA\xea\xfbP\x93\x8e\xc4\x150Z\x99V{@\x90\xf2\xb1\x0fRKRVO\xaa\xca\xb1\xebI\x8fR?\x85\xa8\xe8\xa8\xd2\xcbX\xa1\xa8\xeb\x10d\x9c\xbfJTu\x90\x93\xd8_\xa5)\x1f\x95\x871`\x07\xd2\x94\xda\x84\xada{\x8e\x83H4\x97@\x85\xae\xc1\xcdH\xff\x86\xa8\xeb\x10d\x9c\xbfd\x96\xd0z\xbe\x94\x00T\xca:\x94\x0b\xef\x81@\x02\xe0\x01p\x00S\x16\x8d\xff\x0f\x12\x96\xe4Y>\x94\x03*e\xb6\xa5\x04\x018\xa0Y\xb8\xdbw\x00%1h\xdfY\xad\x1aR2OIjO\xda\x92\x9a\x82\xd4:K\x07\xf3\xd1\x07\xa9t\xf9O\xf3\xf6\xa4\xa6\xa0\xb5\x0e\x92\xfc\xc1\xc3~\x15\x9e\xff_\xeb\xa2\x0fR\xe9\xf2\x9f@\x8d\xac\xb6Rd \xc7\xa9\x0bVz\x0cO_\xff\x02$\xebZ5\x87a\'\x83\xe7\xe9BN\xb5\xa3Z3&\xa2\xa1\x10|\xfd(I\xd6\xb4kKm\x14-\xdc\xb6 \xc7\xaa\x0f\x9f\xa5\t:\xd6\x8dim\xa2\x85\xbb\x96\xc4\x18\xf5-A\x90\x98>~\x94$\xebZ5\xa9<\x85\xa2\x0f\x9f\xa5\t:\xd6\x8do\x07\xf0\xe3P|\xfd(I\xd6\xb4kJ{)ZQ\x91\'\xb1\x10|\xfd(I\xd6\xb4kW@\xd3)\xec\xa6\x0f\x9f\xa5\t:\xd6\x8dj\xe8\x1ae=\x94\xad\xdc\xb6 \xc7\xaa\x0f\x9f@\x94%\x87B\x16=\x86\x98\xd5-aP{l!V\xac\xf4\x18\x9e\xbf\x89%\x87B\x16=\x86\x98\xd5\x7f@\x90!\xeaIjJ\xc8)-\xb0\xc9\xf4\xb5g\xa0\xc4\xf5\xff\x02A,5iY\x16\x11O\xf5ak=\x89Y\x03\xa6\xba\x0b\xfe\x94\xffU\x1e\xa2\x15n9?B\x8aq\x1f\xa7\x8c:*\xf1\x9f\x0b\xf9\xfd~h\xf1\xfe\x94\xffV\xd4\x81\xcaU\x8dU\x06\xa8\xbf\xeb\xec\xf1\xf4)\x12\xb2,"\x9f\xea\xa3\xd4_\xf5\xf7\x18\xd0U\xad\xb0\xca\x7f\xa4\x16\x89\x7f\xd7\xdd\x85\xac\xf6%kl2\x8cD\xc6\xfb\x07R(\x1aK\rf\xc6\x94\xd6\xc1\x11]\x85\xac\xf6\'\xef\xc1\xec\xea[\x16E\x84S\xfd \xb4K\xfe\xbf~\xb7\xb0\xbd\xad5\x85Y6Z\x84\x96E\x93\xea\xb2\xa1iOb\x9f\xe9\x04\xb0\xd5\xa7\xfd}\xd8Z\xcfbV\xb6\xc3(\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMl\x11\x15\xd8Z\xcfb\x7f@\x86\x19\x08Z\xd2\xb1\'\xff\x13\xdcR-{\x1a\xdc!Z\x1b\t?\xd2\x9b\x8aE\xafc[\x84+]2j*\x11\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xd8m\xa2\x85\xb8\x96\xc4\x18\xf5})\xb8\xa4Z\xf65\xb8B\xb6\x1bh\xa1n%\xb1\x06=Kg2\x13\xf4\xa6\xe2\x91k\xd8\xd6\xe1\n\xda\x0f!h\xfaSqH\xb5\xeckp\x85nG\xe4\xe3_Jn)\x16\xbd\x8dn\x10\xad\x84\xf6R\xb6\x11\x91\'\xb1\x1fJn)\x16\xbd\x8dn\x10\xad\xae\x81\xa6S\xd9O\xd2\x9b\x8aE\xafc[\x84+k\xa0i\x94\xf6R\xb7\x12\xd8\x83\x1e\xaf@\x92%\x87B\x16=\x86\x98\xd5,z\xcbQlZ\xb3\xd0bz\x88@\xe9*\xc7\xb0\xd3\x1a\xafT\x01*@\x8e\xb0\xb5\x9e\xc4\x9a\xa9\x96-RVsT\x94\x7f\xf6\x90\xb2\x8e\xda\x13\x07\xf2\xc4Lo\xb0u"\x81\xa4\xb0\xd6liMlx,kXZ\xcfbQ\xfe\x10\xf5$\xbeS\x01r\xfb\xe9\x817\xcd\xd6\x9c\x99\x03]\xd3h\x84\x19\x7fq\xe8\xc5\xcc\xd8\x0b\xd2\x90\xeb\xc4g=^\'\xber\x0e\x9c<8u\xaf4ox\xef\xdba\xf4\r\xe6\xb2\xbb\x83\xaaw\x98=\xafz\x0em.\xe4\xf1\xa3\xa6\x8f\x1a=\xc3\xc3DP\xeb\xce\xec0\xc3{\x1e)\xf6\xf6\xfe\x7fv\x03ESF@\x8c\xf2\xb7\x94!j\xec:JD\x98\xf5\x7f\x010@\x8b\xf2\xb4\xb6\x0e\x92\xacz\xd2c\xd4\x8f\x89\xdd\x0e\x8c\x1a\xb6\xe4\xc5\x93O@\x85\x1d\tY\x1d\xc9\xa4\x9d\x98?\x9b\x8d4\xcf\xf3\xf6\xa5#\x80M\xbe \x00\x1fS\xb2\xb0\x9f\x83\xf9\xb8\xd3L\xff?jR8\x04\xdb\xe2\x00\x01R\x83\xa8\xf5\x17{\x8b\x84\x84-i[\x05D<\x86\xaao'
+2026-06-03 13:55:02,220 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-03 13:55:02,220 - hpack.hpack - DEBUG - Decoded (b':status', b'200'), consumed 1
+2026-06-03 13:55:02,220 - hpack.hpack - DEBUG - Decoded 31, consumed 1 bytes
+2026-06-03 13:55:02,221 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-03 13:55:02,222 - hpack.hpack - DEBUG - Decoded (b'content-type', b'application/json; charset=utf-8'), total consumed 24 bytes, indexed True
+2026-06-03 13:55:02,222 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-03 13:55:02,223 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-03 13:55:02,223 - hpack.hpack - DEBUG - Decoded (b'x-content-type-options', b'nosniff'), total consumed 24 bytes, indexed True
+2026-06-03 13:55:02,224 - hpack.hpack - DEBUG - Decoded 24, consumed 1 bytes
+2026-06-03 13:55:02,224 - hpack.hpack - DEBUG - Decoded 33, consumed 1 bytes
+2026-06-03 13:55:02,225 - hpack.hpack - DEBUG - Decoded (b'cache-control', b'no-cache, no-store, max-age=0, must-revalidate'), total consumed 35 bytes, indexed True
+2026-06-03 13:55:02,225 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-03 13:55:02,229 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-03 13:55:02,231 - hpack.hpack - DEBUG - Decoded (b'pragma', b'no-cache'), total consumed 14 bytes, indexed True
+2026-06-03 13:55:02,231 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-03 13:55:02,232 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-03 13:55:02,233 - hpack.hpack - DEBUG - Decoded (b'expires', b'Mon, 01 Jan 1990 00:00:00 GMT'), total consumed 24 bytes, indexed True
+2026-06-03 13:55:02,234 - hpack.hpack - DEBUG - Decoded 33, consumed 2 bytes
+2026-06-03 13:55:02,234 - hpack.hpack - DEBUG - Decoded 22, consumed 1 bytes
+2026-06-03 13:55:02,235 - hpack.hpack - DEBUG - Decoded (b'date', b'Wed, 03 Jun 2026 13:55:02 GMT'), total consumed 25 bytes, indexed False
+2026-06-03 13:55:02,235 - hpack.hpack - DEBUG - Decoded 25, consumed 1 bytes
+2026-06-03 13:55:02,236 - hpack.hpack - DEBUG - Decoded 45, consumed 1 bytes
+2026-06-03 13:55:02,236 - hpack.hpack - DEBUG - Decoded (b'content-disposition', b'attachment; filename="json.txt"; filename*=UTF-8\'\'json.txt'), total consumed 47 bytes, indexed True
+2026-06-03 13:55:02,237 - hpack.hpack - DEBUG - Decoded 13, consumed 1 bytes
+2026-06-03 13:55:02,237 - hpack.hpack - DEBUG - Decoded 129, consumed 2 bytes
+2026-06-03 13:55:02,238 - hpack.hpack - DEBUG - Decoded (b'permissions-policy', b'ch-ua-arch=*, ch-ua-bitness=*, ch-ua-full-version=*, ch-ua-full-version-list=*, ch-ua-model=*, ch-ua-wow64=*, ch-ua-form-factors=*, ch-ua-platform=*, ch-ua-platform-version=*'), total consumed 146 bytes, indexed True
+2026-06-03 13:55:02,239 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-03 13:55:02,240 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-03 13:55:02,240 - hpack.hpack - DEBUG - Decoded (b'cross-origin-resource-policy', b'cross-origin'), total consumed 32 bytes, indexed True
+2026-06-03 13:55:02,241 - hpack.hpack - DEBUG - Decoded 16, consumed 1 bytes
+2026-06-03 13:55:02,241 - hpack.hpack - DEBUG - Decoded 129, consumed 2 bytes
+2026-06-03 13:55:02,241 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"script-src 'report-sample' 'nonce-VIZ1smGojwFMnwLF9LyXMw' 'unsafe-inline';object-src 'none';base-uri 'self';report-uri /_/TranslateApiHttp/cspreport;worker-src 'self'"), total consumed 149 bytes, indexed True
+2026-06-03 13:55:02,242 - hpack.hpack - DEBUG - Decoded 62, consumed 1 bytes
+2026-06-03 13:55:02,242 - hpack.hpack - DEBUG - Decoded 55, consumed 1 bytes
+2026-06-03 13:55:02,243 - hpack.hpack - DEBUG - Decoded (b'content-security-policy', b"require-trusted-types-for 'script';report-uri /_/TranslateApiHttp/cspreport"), total consumed 57 bytes, indexed True
+2026-06-03 13:55:02,244 - hpack.hpack - DEBUG - Decoded 6, consumed 1 bytes
+2026-06-03 13:55:02,245 - hpack.hpack - DEBUG - Decoded 146, consumed 2 bytes
+2026-06-03 13:55:02,245 - hpack.hpack - DEBUG - Decoded (b'accept-ch', b'Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Model, Sec-CH-UA-WoW64, Sec-CH-UA-Form-Factors, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version'), total consumed 156 bytes, indexed True
+2026-06-03 13:55:02,246 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-03 13:55:02,247 - hpack.hpack - DEBUG - Decoded 8, consumed 1 bytes
+2026-06-03 13:55:02,248 - hpack.hpack - DEBUG - Decoded (b'cross-origin-opener-policy', b'same-origin'), total consumed 29 bytes, indexed True
+2026-06-03 13:55:02,249 - hpack.hpack - DEBUG - Decoded 20, consumed 1 bytes
+2026-06-03 13:55:02,250 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-03 13:55:02,250 - hpack.hpack - DEBUG - Decoded (b'access-control-allow-origin', <memory at 0xffff5877a440>), total consumed 3 bytes, indexed True
+2026-06-03 13:55:02,251 - hpack.hpack - DEBUG - Decoded 14, consumed 1 bytes
+2026-06-03 13:55:02,252 - hpack.hpack - DEBUG - Decoded 118, consumed 1 bytes
+2026-06-03 13:55:02,252 - hpack.hpack - DEBUG - Decoded (b'reporting-endpoints', b'default="/_/TranslateApiHttp/web-reports?context=eJzjEtDikmII1pBiMA0JZHMGYiEejm1PGi6yCczYdamFUUkpKb8wvqQoMa84J7EktTi1qCy1KN7IwMjMwMzAUM_APL7AAACHGhRq"'), total consumed 135 bytes, indexed True
+2026-06-03 13:55:02,253 - hpack.hpack - DEBUG - Decoded 54, consumed 1 bytes
+2026-06-03 13:55:02,254 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-03 13:55:02,254 - hpack.hpack - DEBUG - Decoded (b'server', <memory at 0xffff586c44c0>), total consumed 5 bytes, indexed True
+2026-06-03 13:55:02,255 - hpack.hpack - DEBUG - Decoded 12, consumed 1 bytes
+2026-06-03 13:55:02,256 - hpack.hpack - DEBUG - Decoded 1, consumed 1 bytes
+2026-06-03 13:55:02,257 - hpack.hpack - DEBUG - Decoded (b'x-xss-protection', <memory at 0xffff586c4e80>), total consumed 16 bytes, indexed True
+2026-06-03 13:55:02,258 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-03 13:55:02,258 - hpack.hpack - DEBUG - Decoded 9, consumed 1 bytes
+2026-06-03 13:55:02,258 - hpack.hpack - DEBUG - Decoded (b'x-frame-options', b'SAMEORIGIN'), total consumed 23 bytes, indexed True
+2026-06-03 13:55:02,259 - hpack.hpack - DEBUG - Decoded 5, consumed 1 bytes
+2026-06-03 13:55:02,259 - hpack.hpack - DEBUG - Decoded 36, consumed 1 bytes
+2026-06-03 13:55:02,259 - hpack.hpack - DEBUG - Decoded (b'alt-svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), total consumed 44 bytes, indexed True
+2026-06-03 13:55:02,260 - hpack.hpack - DEBUG - Decoded 18, consumed 1 bytes
+2026-06-03 13:55:02,260 - hpack.hpack - DEBUG - Decoded 3, consumed 1 bytes
+2026-06-03 13:55:02,261 - hpack.hpack - DEBUG - Decoded (b'accept-ranges', b'none'), total consumed 5 bytes, indexed True
+2026-06-03 13:55:02,261 - hpack.hpack - DEBUG - Decoded 59, consumed 1 bytes
+2026-06-03 13:55:02,262 - hpack.hpack - DEBUG - Decoded 11, consumed 1 bytes
+2026-06-03 13:55:02,262 - hpack.hpack - DEBUG - Decoded (b'vary', b'Accept-Encoding'), total consumed 13 bytes, indexed True
+2026-06-03 13:55:02,263 - httpx._client - DEBUG - HTTP Request: GET https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&hl=ru&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=1&ssel=0&tsel=0&tk=xxxx&q=1 "HTTP/2 200 OK"
