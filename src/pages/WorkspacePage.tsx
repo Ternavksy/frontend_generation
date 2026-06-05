@@ -13,6 +13,7 @@ import {
   type AnnotationPayload,
   type AnnotationResponse,
   type ClassType,
+  type ImageUploadMetadata,
   type ModelConfig,
   type Project
 } from '../lib/api';
@@ -44,6 +45,31 @@ interface WorkspaceState {
   maskOpacity: number;
   selectedSegmentationModels: string[];
   selectedDetectionModels: string[];
+}
+
+interface CocoImage {
+  id: number | string;
+  file_name: string;
+  width?: number;
+  height?: number;
+}
+
+interface CocoAnnotation {
+  image_id: number | string;
+  category_id?: number | string;
+  bbox?: number[];
+  segmentation?: unknown;
+}
+
+interface CocoCategory {
+  id: number | string;
+  name: string;
+}
+
+interface CocoDataset {
+  images?: CocoImage[];
+  annotations?: CocoAnnotation[];
+  categories?: CocoCategory[];
 }
 
 const STORAGE_KEY = 'seglabel-ai.workspace';
@@ -187,6 +213,75 @@ const classItemFromApi = (classType: ClassType): ClassItem => ({
   color: '#7CFC8A',
   visible: true
 });
+
+const getFileFormat = (fileName: string) => fileName.split('.').pop()?.toLowerCase() || null;
+
+const normalizeCocoFileName = (name: string) => name.replace(/\\/g, '/').split('/').pop()?.toLowerCase() ?? name.toLowerCase();
+
+const segmentationToPoints = (segmentation: unknown) => {
+  if (!Array.isArray(segmentation)) {
+    return null;
+  }
+
+  const rawPolygon = Array.isArray(segmentation[0])
+    ? segmentation.find((item): item is number[] => Array.isArray(item) && item.every((value) => typeof value === 'number'))
+    : segmentation.every((value) => typeof value === 'number')
+      ? (segmentation as number[])
+      : null;
+
+  if (!rawPolygon || rawPolygon.length < 6) {
+    return null;
+  }
+
+  const points: Array<[number, number]> = [];
+  for (let index = 0; index < rawPolygon.length - 1; index += 2) {
+    points.push([rawPolygon[index], rawPolygon[index + 1]]);
+  }
+
+  return points.length >= 3 ? points : null;
+};
+
+const buildCocoUploadMetadata = async (cocoFile: File, imageFiles: File[]): Promise<ImageUploadMetadata[]> => {
+  const dataset = JSON.parse(await cocoFile.text()) as CocoDataset;
+  const cocoImages = Array.isArray(dataset.images) ? dataset.images : [];
+  const cocoAnnotations = Array.isArray(dataset.annotations) ? dataset.annotations : [];
+  const cocoCategories = Array.isArray(dataset.categories) ? dataset.categories : [];
+  const categoryNameById = new Map(cocoCategories.map((category) => [String(category.id), category.name || 'Object']));
+  const imageByFileName = new Map(cocoImages.map((image) => [normalizeCocoFileName(image.file_name), image]));
+  const annotationsByImageId = new Map<string, CocoAnnotation[]>();
+
+  cocoAnnotations.forEach((annotation) => {
+    const key = String(annotation.image_id);
+    annotationsByImageId.set(key, [...(annotationsByImageId.get(key) ?? []), annotation]);
+  });
+
+  return imageFiles.map((file) => {
+    const cocoImage = imageByFileName.get(normalizeCocoFileName(file.name));
+    const annotations = (cocoImage ? annotationsByImageId.get(String(cocoImage.id)) ?? [] : []).flatMap<AnnotationPayload>((annotation) => {
+      const className = categoryNameById.get(String(annotation.category_id)) ?? 'Object';
+      const points = segmentationToPoints(annotation.segmentation);
+
+      if (points) {
+        return [{ type: 'segment', class_name: className, data: points }];
+      }
+
+      if (Array.isArray(annotation.bbox) && annotation.bbox.length >= 4) {
+        const [x, y, width, height] = annotation.bbox;
+        return [{ type: 'detect', class_name: className, data: [x, y, x + width, y + height] }];
+      }
+
+      return [];
+    });
+
+    return {
+      width: cocoImage?.width ?? null,
+      height: cocoImage?.height ?? null,
+      format: getFileFormat(file.name),
+      annotations,
+      masks: []
+    };
+  });
+};
 
 const buildInitialState = (): WorkspaceState => ({
   projectName: 'Проект',
@@ -344,6 +439,7 @@ const WorkspacePage = () => {
         ];
         const activeLabel =
           remoteImages[0]?.annotations[0]?.label ?? projectClasses[0]?.name_eng ?? projectClasses[0]?.name_ru ?? '';
+        const defaultModel = projectModels.find((model) => model.type.includes('segmentation') || model.type.includes('detection'));
 
         const nextState: WorkspaceState = {
           ...buildInitialState(),
@@ -354,14 +450,8 @@ const WorkspacePage = () => {
           selectedObjectId: null,
           classList,
           activeLabel,
-          selectedSegmentationModels: projectModels
-            .filter((model) => model.type.includes('segmentation'))
-            .slice(0, 1)
-            .map((model) => String(model.id)),
-          selectedDetectionModels: projectModels
-            .filter((model) => model.type.includes('detection'))
-            .slice(0, 1)
-            .map((model) => String(model.id))
+          selectedSegmentationModels: defaultModel?.type.includes('segmentation') ? [String(defaultModel.id)] : [],
+          selectedDetectionModels: defaultModel?.type.includes('detection') ? [String(defaultModel.id)] : []
         };
 
         historyRef.current = [cloneState(nextState)];
@@ -516,42 +606,72 @@ const WorkspacePage = () => {
       return;
     }
 
+    const cocoFile = files.find((file) => file.name.toLowerCase().endsWith('.json'));
+    const imageFiles = files.filter((file) => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      setStatusMessage(cocoFile ? 'Выберите COCO JSON вместе с файлами изображений' : 'Выберите файлы изображений');
+      event.target.value = '';
+      return;
+    }
+
     if (selectedProjectId) {
       setIsLoadingRemoteImages(true);
-      setStatusMessage(`Загружаем изображений в backend: ${files.length}`);
+      setStatusMessage(cocoFile ? `Загружаем COCO dataset в backend: ${imageFiles.length}` : `Загружаем изображений в backend: ${imageFiles.length}`);
 
       try {
-        const uploaded = await api.uploadImages(selectedProjectId, files);
+        const metadata = cocoFile ? await buildCocoUploadMetadata(cocoFile, imageFiles) : undefined;
+        const uploaded = await api.uploadImages(selectedProjectId, imageFiles, metadata ? { metadata } : undefined);
         const remoteImages = await Promise.all(
           uploaded.map(async (item, index) => {
             const src = await api.getImageObjectUrl(selectedProjectId, item.id);
+            const fetchedAnnotations = await api
+              .getAnnotations(selectedProjectId, item.id)
+              .then((annotations) => annotations.map(annotationFromApi))
+              .catch(() => [] as AnnotationObject[]);
             uploadedUrlsRef.current.push(src);
 
             return {
               id: item.id,
-              name: item.file_path?.split('/').pop() ?? files[index]?.name ?? `${index + 1}.${item.format ?? 'jpg'}`,
+              name: item.file_path?.split('/').pop() ?? imageFiles[index]?.name ?? `${index + 1}.${item.format ?? 'jpg'}`,
               src,
-              annotations: annotationsFromRecord(item.annotations)
+              annotations: mergeAnnotationObjects(fetchedAnnotations, annotationsFromRecord(item.annotations))
             } satisfies WorkspaceImage;
           })
         );
+        const refreshedClasses = cocoFile ? await api.getProjectClasses(selectedProjectId).catch(() => availableClasses) : availableClasses;
+        const uploadedClassNames = Array.from(new Set(remoteImages.flatMap((image) => image.annotations.map((item) => item.label))));
 
         updateWorkspace(
           (current) => {
             const existingImages = current.images.filter((image) => image.id !== EMPTY_IMAGE_ID);
+            const existingClassNames = new Set(current.classList.map((item) => item.name.toLowerCase()));
+            const refreshedClassItems = refreshedClasses
+              .map(classItemFromApi)
+              .filter((item) => !existingClassNames.has(item.name.toLowerCase()));
+            const refreshedClassNames = new Set([
+              ...current.classList.map((item) => item.name.toLowerCase()),
+              ...refreshedClassItems.map((item) => item.name.toLowerCase())
+            ]);
+            const annotationClassItems = uploadedClassNames
+              .filter((name) => !refreshedClassNames.has(name.toLowerCase()))
+              .map<ClassItem>((name) => ({ name, source: 'imported', color: '#7CFC8A', visible: true }));
 
             return {
               ...current,
               images: [...existingImages, ...remoteImages],
               currentImageIndex: existingImages.length,
-              taskName: files[0].name.replace(/\.[^.]+$/, ''),
-              selectedObjectId: null
+              taskName: imageFiles[0]?.name.replace(/\.[^.]+$/, '') ?? current.taskName,
+              selectedObjectId: null,
+              classList: [...current.classList, ...refreshedClassItems, ...annotationClassItems],
+              activeLabel: current.activeLabel || refreshedClassItems[0]?.name || annotationClassItems[0]?.name || ''
             };
           },
-          { status: `Backend загрузил изображений: ${remoteImages.length}` }
+          { status: cocoFile ? `Backend загрузил COCO dataset: ${remoteImages.length}` : `Backend загрузил изображений: ${remoteImages.length}` }
         );
+        setAvailableClasses(refreshedClasses);
       } catch (err) {
-        setStatusMessage(err instanceof Error ? `Не удалось загрузить изображения в backend: ${err.message}` : 'Не удалось загрузить изображения в backend');
+        setStatusMessage(err instanceof Error ? `Не удалось загрузить dataset в backend: ${err.message}` : 'Не удалось загрузить dataset в backend');
       } finally {
         setIsLoadingRemoteImages(false);
         event.target.value = '';
@@ -560,7 +680,7 @@ const WorkspacePage = () => {
       return;
     }
 
-    const nextImages: WorkspaceImage[] = files.map((file, index) => {
+    const nextImages: WorkspaceImage[] = imageFiles.map((file, index) => {
       const src = URL.createObjectURL(file);
       uploadedUrlsRef.current.push(src);
 
@@ -571,20 +691,39 @@ const WorkspacePage = () => {
         annotations: []
       };
     });
+    const localMetadata = cocoFile ? await buildCocoUploadMetadata(cocoFile, imageFiles).catch(() => null) : null;
+    const annotatedNextImages = localMetadata
+      ? nextImages.map((image, index) => ({
+          ...image,
+          annotations: localMetadata[index].annotations.map((annotation) => annotationFromApi({
+            id: createLocalAnnotationId(),
+            type: annotation.type,
+            class_name: annotation.class_name,
+            data: annotation.data
+          } satisfies AnnotationResponse))
+        }))
+      : nextImages;
 
     updateWorkspace(
       (current) => {
         const existingImages = current.images.filter((image) => image.id !== EMPTY_IMAGE_ID);
+        const importedClassNames = Array.from(new Set(annotatedNextImages.flatMap((image) => image.annotations.map((item) => item.label))));
+        const existingClassNames = new Set(current.classList.map((item) => item.name.toLowerCase()));
+        const importedClassItems = importedClassNames
+          .filter((name) => !existingClassNames.has(name.toLowerCase()))
+          .map<ClassItem>((name) => ({ name, source: 'imported', color: '#7CFC8A', visible: true }));
 
         return {
           ...current,
-          images: [...existingImages, ...nextImages],
+          images: [...existingImages, ...annotatedNextImages],
           currentImageIndex: existingImages.length,
-          taskName: files[0].name.replace(/\.[^.]+$/, ''),
-          selectedObjectId: null
+          taskName: imageFiles[0]?.name.replace(/\.[^.]+$/, '') ?? current.taskName,
+          selectedObjectId: null,
+          classList: [...current.classList, ...importedClassItems],
+          activeLabel: current.activeLabel || importedClassItems[0]?.name || ''
         };
       },
-      { status: `Добавлено изображений: ${files.length}` }
+      { status: cocoFile ? `Добавлен локальный COCO dataset: ${annotatedNextImages.length}` : `Добавлено изображений: ${imageFiles.length}` }
     );
 
     event.target.value = '';
@@ -611,18 +750,35 @@ const WorkspacePage = () => {
   };
 
   const ensureRemoteClass = async (projectId: string, label: string) => {
-    const exists = workspace.classList.some((item) => item.name.toLowerCase() === label.toLowerCase() && item.source !== 'manual');
+    const exists =
+      availableClasses.some((item) => item.name_eng.toLowerCase() === label.toLowerCase() || item.name_ru.toLowerCase() === label.toLowerCase()) ||
+      workspace.classList.some((item) => item.name.toLowerCase() === label.toLowerCase() && item.source !== 'manual');
 
     if (exists) {
       return;
     }
 
     try {
-      await api.createProjectClass(projectId, label);
+      const createdClass = await api.createProjectClass(projectId, label);
+      const classItem = classItemFromApi(createdClass);
+
+      setAvailableClasses((current) => (current.some((item) => item.id === createdClass.id) ? current : [...current, createdClass]));
+      updateWorkspace(
+        (current) => ({
+          ...current,
+          classList: current.classList.some((item) => item.name.toLowerCase() === classItem.name.toLowerCase())
+            ? current.classList.map((item) => (item.name.toLowerCase() === classItem.name.toLowerCase() ? { ...item, source: 'imported' } : item))
+            : [...current.classList, classItem]
+        }),
+        { recordHistory: false }
+      );
     } catch (err) {
       if (!(err instanceof Error) || !err.message.includes('уже существует')) {
         throw err;
       }
+
+      const refreshedClasses = await api.getProjectClasses(projectId);
+      setAvailableClasses(refreshedClasses);
     }
   };
 
@@ -868,6 +1024,52 @@ const WorkspacePage = () => {
     );
   };
 
+  const removeClassFromWorkspace = (name: string, status: string) => {
+    updateWorkspace(
+      (current) => {
+        const nextClassList = current.classList.filter((item) => item.name !== name);
+        const nextActiveLabel = current.activeLabel === name ? nextClassList[0]?.name ?? '' : current.activeLabel;
+
+        return {
+          ...current,
+          classList: nextClassList,
+          activeLabel: nextActiveLabel,
+          selectedObjectId: current.images[current.currentImageIndex]?.annotations.some(
+            (annotation) => annotation.id === current.selectedObjectId && annotation.label === name
+          )
+            ? null
+            : current.selectedObjectId,
+          images: current.images.map((image) => ({
+            ...image,
+            annotations: image.annotations.filter((annotation) => annotation.label !== name)
+          }))
+        };
+      },
+      { status }
+    );
+    setAnalysisClassNames((current) => current.filter((item) => item !== name));
+  };
+
+  const deleteClass = async (name: string) => {
+    const remoteClass = availableClasses.find((item) => item.name_eng === name || item.name_ru === name);
+
+    if (selectedProjectId && remoteClass) {
+      setStatusMessage(`Удаляем класс ${name} на сервере...`);
+
+      try {
+        await api.deleteProjectClass(selectedProjectId, remoteClass.id);
+        setAvailableClasses((current) => current.filter((item) => item.id !== remoteClass.id));
+        removeClassFromWorkspace(name, `Класс ${name} удалён`);
+      } catch (err) {
+        setStatusMessage(err instanceof Error ? `Не удалось удалить класс: ${err.message}` : 'Не удалось удалить класс');
+      }
+
+      return;
+    }
+
+    removeClassFromWorkspace(name, `Класс ${name} удалён локально`);
+  };
+
   const updateClassOpacity = (name: string, opacity: number) => {
     updateWorkspace(
       (current) => ({
@@ -953,16 +1155,15 @@ const WorkspacePage = () => {
     updateWorkspace(
       (current) => {
         const key = kind === 'segmentation' ? 'selectedSegmentationModels' : 'selectedDetectionModels';
-        const currentModels = current[key];
+        const isSelected = current[key].includes(model);
 
         return {
           ...current,
-          [key]: currentModels.includes(model)
-            ? currentModels.filter((item) => item !== model)
-            : [...currentModels, model]
+          selectedSegmentationModels: kind === 'segmentation' && !isSelected ? [model] : [],
+          selectedDetectionModels: kind === 'detection' && !isSelected ? [model] : []
         };
       },
-      { recordHistory: false, status: `Список моделей ${kind === 'segmentation' ? 'сегментации' : 'детекции'} обновлён` }
+      { recordHistory: false, status: `Модель ${kind === 'segmentation' ? 'сегментации' : 'детекции'} обновлена` }
     );
   };
 
@@ -986,7 +1187,12 @@ const WorkspacePage = () => {
       .map((classType) => classType.id);
 
     if (!selectedModelIds.length) {
-      setStatusMessage('Выберите хотя бы одну модель');
+      setStatusMessage('Выберите модель для анализа');
+      return;
+    }
+
+    if (selectedModelIds.length > 1) {
+      setStatusMessage('Выберите только одну модель для анализа');
       return;
     }
 
@@ -1055,7 +1261,7 @@ const WorkspacePage = () => {
       setStatusMessage(err instanceof Error ? `WebSocket не прошёл, пробуем REST: ${err.message}` : 'WebSocket не прошёл, пробуем REST');
 
       try {
-        const annotations = await api.runModels(selectedProjectId, currentImageId, selectedModelIds, selectedClassNames[0]);
+        const annotations = await api.runModels(selectedProjectId, currentImageId, [selectedModelId], selectedClassNames[0]);
         const generated = annotations.map(annotationFromApi);
 
         updateWorkspace(
@@ -1085,7 +1291,7 @@ const WorkspacePage = () => {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,application/json,.json"
         multiple
         onChange={handleImageUpload}
         className="hidden"
@@ -1170,6 +1376,7 @@ const WorkspacePage = () => {
                 })
               }
               onToggleClassVisibility={toggleClassVisibility}
+              onDeleteClass={deleteClass}
               onToggleAnalysisClass={toggleAnalysisClass}
               onToggleModel={toggleModel}
               onRunModels={handleRunModels}

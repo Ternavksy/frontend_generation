@@ -133,6 +133,7 @@ interface WorkspaceCanvasProps {
   onDeleteObject: (id: AnnotationObject['id']) => void;
   onSelectClass: (name: string) => void;
   onToggleClassVisibility: (name: string) => void;
+  onDeleteClass: (name: string) => void;
   onToggleAnalysisClass: (name: string) => void;
   onToggleModel: (model: string, kind: 'segmentation' | 'detection') => void;
   onRunModels: () => void;
@@ -346,6 +347,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   onDeleteObject,
   onSelectClass,
   onToggleClassVisibility,
+  onDeleteClass,
   onToggleAnalysisClass,
   onToggleModel,
   onRunModels,
@@ -597,6 +599,56 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       : selectedOpacityClass?.opacity ?? maskOpacity;
   const getObjectOpacity = (object: AnnotationObject) =>
     object.opacity ?? classList.find((item) => item.name === object.label)?.opacity ?? maskOpacity;
+  const standardSegmentationModels = useMemo(
+    () => segmentationModels.filter((model) => model.type === 'segmentation'),
+    [segmentationModels]
+  );
+  const sahiSegmentationModels = useMemo(
+    () => segmentationModels.filter((model) => model.type === 'sahi_segmentation'),
+    [segmentationModels]
+  );
+  const standardDetectionModels = useMemo(
+    () => detectionModels.filter((model) => model.type === 'detection'),
+    [detectionModels]
+  );
+  const sahiDetectionModels = useMemo(
+    () => detectionModels.filter((model) => model.type === 'sahi_detection'),
+    [detectionModels]
+  );
+  const renderModelOptions = (
+    models: WorkspaceModelItem[],
+    selectedModels: string[],
+    kind: 'segmentation' | 'detection',
+    checkboxClassName: string,
+    badgeClassName: string,
+    emptyMessage: string
+  ) => (
+    <div className="mt-2 grid gap-1.5">
+      {models.map((model) => {
+        const modelKey = String(model.id);
+        const isChecked = selectedModels.includes(modelKey);
+
+        return (
+          <label
+            key={model.id}
+            className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-200"
+          >
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={() => onToggleModel(modelKey, kind)}
+              className={checkboxClassName}
+            />
+            <span className="min-w-0 truncate">{model.name}</span>
+            <span className={badgeClassName}>
+              {modelTypeLabel[model.type] ?? model.type}
+            </span>
+          </label>
+        );
+      })}
+      {!models.length && <div className="rounded-lg bg-slate-900/70 px-2.5 py-2 text-xs text-slate-500">{emptyMessage}</div>}
+    </div>
+  );
 
   const comparisonLeftObjects = useMemo(
     () => (compareViewMode === 'split' ? getObjectsForSource(compareLeftSource) : previewVisibleObjects),
@@ -2162,6 +2214,15 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     >
                       {item.visible ? 'Виден' : 'Скрыт'}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteClass(item.name)}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/80 text-slate-400 transition hover:border-rose-500/50 hover:bg-rose-500/10 hover:text-rose-200"
+                      aria-label={`Удалить класс ${item.name}`}
+                      title="Удалить класс"
+                    >
+                      <Trash2 size={14} aria-hidden="true" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -2215,58 +2276,44 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   </div>
 
                   <div className="mt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">Сегментация</div>
-                  <div className="mt-2 grid gap-1.5">
-                    {segmentationModels.map((model) => {
-                      const modelKey = String(model.id);
-                      const isChecked = selectedSegmentationModels.includes(modelKey);
+                  {renderModelOptions(
+                    standardSegmentationModels,
+                    selectedSegmentationModels,
+                    'segmentation',
+                    'h-4 w-4 rounded border-slate-700 bg-slate-950 accent-emerald-500',
+                    'ml-auto shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-200',
+                    'Нет доступных моделей сегментации'
+                  )}
 
-                      return (
-                        <label
-                          key={model.id}
-                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-200"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => onToggleModel(modelKey, 'segmentation')}
-                            className="h-4 w-4 rounded border-slate-700 bg-slate-950 accent-emerald-500"
-                          />
-                          <span className="min-w-0 truncate">{model.name}</span>
-                          <span className="ml-auto shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-200">
-                            {modelTypeLabel[model.type] ?? model.type}
-                          </span>
-                        </label>
-                      );
-                    })}
-                    {!segmentationModels.length && <div className="rounded-lg bg-slate-900/70 px-2.5 py-2 text-xs text-slate-500">Нет доступных моделей сегментации</div>}
-                  </div>
+                  <div className="mt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">SAHI сегментация</div>
+                  {renderModelOptions(
+                    sahiSegmentationModels,
+                    selectedSegmentationModels,
+                    'segmentation',
+                    'h-4 w-4 rounded border-slate-700 bg-slate-950 accent-emerald-500',
+                    'ml-auto shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-200',
+                    'Нет доступных SAHI моделей сегментации'
+                  )}
 
                   <div className="mt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">Детекция</div>
-                  <div className="mt-2 grid gap-1.5">
-                    {detectionModels.map((model) => {
-                      const modelKey = String(model.id);
-                      const isChecked = selectedDetectionModels.includes(modelKey);
+                  {renderModelOptions(
+                    standardDetectionModels,
+                    selectedDetectionModels,
+                    'detection',
+                    'h-4 w-4 rounded border-slate-700 bg-slate-950 accent-brand-500',
+                    'ml-auto shrink-0 rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] text-brand-100',
+                    'Нет доступных моделей детекции'
+                  )}
 
-                      return (
-                        <label
-                          key={model.id}
-                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/70 px-2.5 py-2 text-xs text-slate-200"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => onToggleModel(modelKey, 'detection')}
-                            className="h-4 w-4 rounded border-slate-700 bg-slate-950 accent-brand-500"
-                          />
-                          <span className="min-w-0 truncate">{model.name}</span>
-                          <span className="ml-auto shrink-0 rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] text-brand-100">
-                            {modelTypeLabel[model.type] ?? model.type}
-                          </span>
-                        </label>
-                      );
-                    })}
-                    {!detectionModels.length && <div className="rounded-lg bg-slate-900/70 px-2.5 py-2 text-xs text-slate-500">Нет доступных моделей детекции</div>}
-                  </div>
+                  <div className="mt-3 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">SAHI детекция</div>
+                  {renderModelOptions(
+                    sahiDetectionModels,
+                    selectedDetectionModels,
+                    'detection',
+                    'h-4 w-4 rounded border-slate-700 bg-slate-950 accent-brand-500',
+                    'ml-auto shrink-0 rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] text-brand-100',
+                    'Нет доступных SAHI моделей детекции'
+                  )}
 
                   <button
                     type="button"

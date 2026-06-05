@@ -17,24 +17,33 @@ router = APIRouter(prefix='/api/image', tags=['Image'])
 @router.post("/{project_id}/images/upload", response_model=List[ImageResponse])
 async def upload_images_endpoint(
     project_id: str,
-    metadata_json: str = Form(..., description="JSON список метаданных изображений"),
     files: List[UploadFile] = File(..., description="Файлы изображений"),
-    mask_files: List[UploadFile] = Form(default=[], description="Файлы масок (опционально, порядок соответствует маскам в метаданных)"),
+    metadata_json: Optional[str] = Form(None, description="JSON список метаданных изображений"),
+    mask_files: Optional[List[UploadFile]] = File(None, description="Файлы масок (опционально, порядок соответствует маскам в метаданных)"),
     token: str = Depends(get_token),
     db: AsyncSession = Depends(get_database)
 ):
     logger = logging.getLogger("ImageRouter")
     user = await search_check_user(token, logger, db)
-    
-    try:
-        metadata = [ImageUploadRequest(**m) for m in json.loads(metadata_json)]
-    except Exception:
-        raise HTTPException(status_code=400, detail="Неверный формат JSON в поле metadata")
+    normalized_mask_files = [file for file in (mask_files or []) if file.filename]
+
+    if metadata_json and metadata_json.strip():
+        try:
+            raw_metadata = json.loads(metadata_json)
+            if not isinstance(raw_metadata, list):
+                raise ValueError("metadata must be a list")
+            metadata = [ImageUploadRequest(**m) for m in raw_metadata]
+        except Exception:
+            raise HTTPException(status_code=400, detail="Неверный формат JSON в поле metadata")
+    else:
+        if normalized_mask_files:
+            raise HTTPException(status_code=400, detail="Для загрузки масок необходимо передать metadata_json")
+        metadata = [ImageUploadRequest() for _ in files]
         
     if len(files) != len(metadata):
         raise HTTPException(status_code=400, detail="Количество файлов изображений не соответствует количеству метаданных")
 
-    return await ImageService.upload_images(db, user, project_id, metadata, files, mask_files, logger)
+    return await ImageService.upload_images(db, user, project_id, metadata, files, normalized_mask_files, logger)
 
 
 @router.get("/{project_id}/images", response_model=List[ImageResponse])

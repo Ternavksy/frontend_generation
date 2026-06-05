@@ -66,12 +66,24 @@ export interface ProjectImage {
   annotations: Record<string, AnnotationResponse>;
 }
 
-interface ImageUploadMetadata {
+export interface ImageUploadMaskMetadata {
+  class_name: string;
+  width?: number | null;
+  height?: number | null;
+  format?: string | null;
+}
+
+export interface ImageUploadMetadata {
   width: number | null;
   height: number | null;
   format: string | null;
-  annotations: [];
-  masks: [];
+  annotations: AnnotationPayload[];
+  masks: ImageUploadMaskMetadata[];
+}
+
+export interface UploadImagesOptions {
+  metadata?: ImageUploadMetadata[];
+  maskFiles?: File[];
 }
 
 export type AnnotationApiType = 'detect' | 'segment' | 'detection' | 'segmentation';
@@ -253,28 +265,6 @@ const requestBlob = async (path: string, retry = true): Promise<Blob> => {
   return response.blob();
 };
 
-const getImageUploadMetadata = (file: File): Promise<ImageUploadMetadata> =>
-  new Promise((resolve) => {
-    const objectUrl = URL.createObjectURL(file);
-    const image = new Image();
-    const format = file.type.split('/')[1] || file.name.split('.').pop() || null;
-
-    const finish = (width: number | null, height: number | null) => {
-      URL.revokeObjectURL(objectUrl);
-      resolve({
-        width,
-        height,
-        format,
-        annotations: [],
-        masks: []
-      });
-    };
-
-    image.onload = () => finish(image.naturalWidth || null, image.naturalHeight || null);
-    image.onerror = () => finish(null, null);
-    image.src = objectUrl;
-  });
-
 const startAnalysisViaWebSocket = (payload: {
   imageId: string;
   modelConfigId: number;
@@ -423,6 +413,8 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ name_eng: name })
     }),
+  deleteProjectClass: (projectId: string, classTypeId: string) =>
+    request<{ detail: string }>(`/projects/${projectId}/classes/${classTypeId}`, { method: 'DELETE' }),
   getProjectImages: async (projectId: string) =>
     unwrapArray<ProjectImage>(await request<unknown>(`/image/${projectId}/images`), ['images', 'items', 'data', 'results']),
   getImageObjectUrl: async (projectId: string, imageId: string) => {
@@ -458,12 +450,17 @@ export const api = {
       method: 'DELETE'
     }),
 
-  uploadImages: async (projectId: string, files: File[]) => {
+  uploadImages: async (projectId: string, files: File[], options: UploadImagesOptions = {}) => {
     const formData = new FormData();
-    const metadata = await Promise.all(files.map(getImageUploadMetadata));
 
-    formData.append('metadata_json', JSON.stringify(metadata));
     files.forEach((file) => formData.append('files', file));
+
+    if (options.metadata) {
+      formData.append('metadata_json', JSON.stringify(options.metadata));
+    }
+
+    options.maskFiles?.forEach((file) => formData.append('mask_files', file));
+
     return request<unknown>(`/image/${projectId}/images/upload`, {
       method: 'POST',
       body: formData

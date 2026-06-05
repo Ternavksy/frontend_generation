@@ -83,6 +83,12 @@ class ImageService:
                 )
 
                 img_data = data.model_dump(exclude={'annotations', 'masks'})
+                if img_data.get('width') is None or img_data.get('height') is None:
+                    width, height = await asyncio.to_thread(ImageService._decode_image_size, img_bytes)
+                    img_data['width'] = img_data.get('width') or width
+                    img_data['height'] = img_data.get('height') or height
+                if img_data.get('format') is None:
+                    img_data['format'] = ext.lstrip('.').lower() or None
                 img_data['file_path'] = relative_img_path
                 img = ImageRepository.create(db, user_id=user.id, project_id=project_id, **img_data)
                 await db.flush()
@@ -145,10 +151,22 @@ class ImageService:
                 })
             return created_images
 
+        except HTTPException:
+            await db.rollback()
+            raise
         except Exception as e:
             await db.rollback()
             logger.error(f"Ошибка при загрузке изображений: {e}")
             raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера при загрузке")
+
+    @staticmethod
+    def _decode_image_size(image_bytes: bytes) -> Tuple[int | None, int | None]:
+        arr = np.frombuffer(image_bytes, dtype=np.uint8)
+        image = cv2.imdecode(arr, cv2.IMREAD_UNCHANGED)
+        if image is None:
+            return None, None
+        height, width = image.shape[:2]
+        return width, height
 
     @staticmethod
     def _decode_and_process_mask(mask_bytes: bytes) -> List[List[List[float]]]:
