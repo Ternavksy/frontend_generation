@@ -8,10 +8,13 @@ const CANVAS_PAN_DRAG_THRESHOLD = 4;
 const MIN_CANVAS_ZOOM = 0.6;
 const MAX_CANVAS_ZOOM = 8;
 const CANVAS_ZOOM_STEP = 1.25;
-const POLYGON_CORRECTION_MIN_SCREEN_DISTANCE = 4;
-const POLYGON_CORRECTION_HIT_SCREEN_DISTANCE = 34;
+const POLYGON_CORRECTION_MIN_SCREEN_DISTANCE = 10;
+const POLYGON_CORRECTION_HIT_SCREEN_DISTANCE = 42;
 const MIN_BOX_SIZE = 8;
 const RESIZE_HANDLE_SIZE = 10;
+const ANNOTATION_LABEL_FONT_SCREEN_SIZE = 9;
+const ANNOTATION_LABEL_PADDING_SCREEN_SIZE = 1;
+const ANNOTATION_LABEL_OFFSET_SCREEN_SIZE = 5;
 
 export type ToolMode = 'select' | 'box' | 'polygon' | 'zoom' | 'move' | 'brush' | 'eraser' | 'split';
 export type ActiveToolMode = ToolMode | null;
@@ -46,6 +49,12 @@ type BoxResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 interface ObjectEditPreview {
   id: AnnotationObject['id'];
   patch: Partial<AnnotationObject>;
+}
+
+interface ObjectMoveStart {
+  id: AnnotationObject['id'];
+  pointer: PolygonPoint;
+  points?: PolygonPoint[];
 }
 
 export interface AnnotationObject {
@@ -377,6 +386,8 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   const [isCtrlPressed, setIsCtrlPressed] = useState(false);
   const [indexInput, setIndexInput] = useState(String(imageIndex + 1));
   const [objectEditPreview, setObjectEditPreview] = useState<ObjectEditPreview | null>(null);
+  const [polygonCorrectionPreviewPoint, setPolygonCorrectionPreviewPoint] = useState<PolygonPoint | null>(null);
+  const [polygonCorrectionHoverIndex, setPolygonCorrectionHoverIndex] = useState<number | null>(null);
   const polygonCorrectionDraftRef = useRef<PolygonCorrectionDraft | null>(null);
   const leftButtonDownRef = useRef(false);
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -386,6 +397,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   const pendingPolygonClickRef = useRef<PolygonPoint | null>(null);
   const objectMoveIntentRef = useRef<AnnotationObject['id'] | null>(null);
   const objectMoveDragRef = useRef<AnnotationObject['id'] | null>(null);
+  const objectMoveStartRef = useRef<ObjectMoveStart | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -440,6 +452,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     pendingPolygonClickRef.current = null;
     objectMoveIntentRef.current = null;
     objectMoveDragRef.current = null;
+    objectMoveStartRef.current = null;
   }, [imageSrc]);
 
   useEffect(() => {
@@ -471,6 +484,15 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   useEffect(() => {
     setObjectEditPreview(null);
   }, [selectedObjectId, activeTool]);
+
+  useEffect(() => {
+    if (activeTool === 'polygon') {
+      return;
+    }
+
+    setPolygonDraft([]);
+    pendingPolygonClickRef.current = null;
+  }, [activeTool]);
 
   useEffect(() => {
     if (activeTool && activeTool !== 'box' && activeTool !== 'polygon') {
@@ -585,7 +607,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       selectedObject?.type === 'polygon' && (selectedObject.points?.length ?? 0) >= 3 ? selectedObject : null,
     [selectedObject]
   );
-  const isPolygonCorrectionMode = activeTool === 'polygon' && (isShiftPressed || Boolean(polygonCorrectionDraft));
+  const isPolygonCorrectionMode = isShiftPressed || Boolean(polygonCorrectionDraft);
   const listedObjects = useMemo(
     () => previewVisibleObjects.filter((item) => !(item.type === 'brush' && item.operation === 'erase')),
     [previewVisibleObjects]
@@ -599,6 +621,20 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       : selectedOpacityClass?.opacity ?? maskOpacity;
   const getObjectOpacity = (object: AnnotationObject) =>
     object.opacity ?? classList.find((item) => item.name === object.label)?.opacity ?? maskOpacity;
+  const annotationLabelFontSize = ANNOTATION_LABEL_FONT_SCREEN_SIZE / canvasScale;
+  const annotationLabelPadding = ANNOTATION_LABEL_PADDING_SCREEN_SIZE / canvasScale;
+  const annotationLabelOffset = ANNOTATION_LABEL_OFFSET_SCREEN_SIZE / canvasScale;
+  const annotationLabelTopOffset =
+    (ANNOTATION_LABEL_FONT_SCREEN_SIZE + ANNOTATION_LABEL_PADDING_SCREEN_SIZE * 2 + ANNOTATION_LABEL_OFFSET_SCREEN_SIZE) /
+    canvasScale;
+  const getPointObjectLabelPosition = (points: PolygonPoint[]) => {
+    const bounds = getPolygonBounds(points);
+
+    return {
+      x: bounds.x + annotationLabelOffset,
+      y: Math.max(0, bounds.y - annotationLabelTopOffset)
+    };
+  };
   const standardSegmentationModels = useMemo(
     () => segmentationModels.filter((model) => model.type === 'segmentation'),
     [segmentationModels]
@@ -792,6 +828,11 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   const updatePolygonCorrectionDraft = (nextDraft: PolygonCorrectionDraft | null) => {
     polygonCorrectionDraftRef.current = nextDraft;
     setPolygonCorrectionDraft(nextDraft);
+
+    if (!nextDraft) {
+      setPolygonCorrectionPreviewPoint(null);
+      setPolygonCorrectionHoverIndex(null);
+    }
   };
 
   const findNearestPolygonPoint = (
@@ -846,6 +887,8 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
     return null;
   };
+
+  const isShiftCorrectionActive = (event?: any) => Boolean(event?.evt?.shiftKey || isShiftPressed);
 
   const appendPolygonCorrectionPoint = (point: PolygonPoint) => {
     const draft = polygonCorrectionDraftRef.current;
@@ -987,13 +1030,13 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
   const startPolygonCorrection = (event: any, objectOverride?: AnnotationObject) => {
     if (event.evt.button !== 0) {
-      return;
+      return false;
     }
 
     const pointer = getPointer(event);
 
     if (!pointer) {
-      return;
+      return false;
     }
 
     const target =
@@ -1006,15 +1049,16 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
         : getPolygonCorrectionTarget();
 
     if (!target) {
-      return;
+      return false;
     }
 
     const nearest = findNearestPolygonPoint(target.points, pointer, POLYGON_CORRECTION_HIT_SCREEN_DISTANCE / canvasScale);
 
     if (!nearest) {
-      return;
+      return false;
     }
 
+    leftButtonDownRef.current = true;
     event.evt.preventDefault();
     updatePolygonCorrectionDraft({
       target: target.target,
@@ -1023,11 +1067,15 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       points: dedupeConsecutivePoints([target.points[nearest.index], pointer]),
       hasMoved: false
     });
+    setPolygonCorrectionPreviewPoint(pointer);
+    setPolygonCorrectionHoverIndex(null);
     if (target.target === 'draft') {
       onSelectObject(null);
     } else {
       onSelectObject(target.objectId);
     }
+
+    return true;
   };
 
   const updatePolygonCorrection = (event: any) => {
@@ -1041,7 +1089,16 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       return;
     }
 
-    appendPolygonCorrectionPoint(pointer);
+    setPolygonCorrectionPreviewPoint(pointer);
+
+    const currentDraft = polygonCorrectionDraftRef.current;
+    const target = getPolygonCorrectionTarget();
+    const nearest = target ? findNearestPolygonPoint(target.points, pointer, POLYGON_CORRECTION_HIT_SCREEN_DISTANCE / canvasScale) : null;
+    setPolygonCorrectionHoverIndex(nearest && currentDraft && nearest.index !== currentDraft.startIndex ? nearest.index : null);
+
+    if (leftButtonDownRef.current && isShiftCorrectionActive(event)) {
+      appendPolygonCorrectionPoint(pointer);
+    }
   };
 
   const finishPolygonCorrection = (event: any) => {
@@ -1064,7 +1121,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       return false;
     }
 
-    const nearest = findNearestPolygonPoint(target.points, pointer, POLYGON_CORRECTION_HIT_SCREEN_DISTANCE / canvasScale);
+    const nearestAtPointer = findNearestPolygonPoint(target.points, pointer, POLYGON_CORRECTION_HIT_SCREEN_DISTANCE / canvasScale);
+    const nearest =
+      nearestAtPointer ??
+      (polygonCorrectionHoverIndex !== null ? { index: polygonCorrectionHoverIndex, distance: 0 } : null);
 
     if (nearest && nearest.index !== correctionDraft.startIndex && correctionPoints.length > 1) {
       applyPolygonCorrection(correctionDraft, nearest.index, correctionPoints);
@@ -1167,8 +1227,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     event.evt?.stopPropagation?.();
   };
 
-  const isPolygonCorrectionGesture = (event: any) =>
-    activeTool === 'polygon' && (event.evt?.shiftKey || isShiftPressed);
+  const isPolygonCorrectionGesture = (event: any) => isShiftCorrectionActive(event);
 
   const rememberObjectMoveIntent = (object: AnnotationObject, event: any) => {
     objectMoveIntentRef.current =
@@ -1195,6 +1254,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     if (!canMove) {
       objectMoveIntentRef.current = null;
       objectMoveDragRef.current = null;
+      objectMoveStartRef.current = null;
       event.target.stopDrag();
       resetObjectDragPosition(object, event);
       return;
@@ -1202,6 +1262,11 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
     objectMoveIntentRef.current = null;
     objectMoveDragRef.current = object.id;
+    objectMoveStartRef.current = {
+      id: object.id,
+      pointer: getPointer(event) ?? { x: 0, y: 0 },
+      points: object.points?.map((point) => ({ ...point }))
+    };
   };
 
   const previewObjectPatch = (id: AnnotationObject['id'], patch: Partial<AnnotationObject>) => {
@@ -1248,6 +1313,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
       resetObjectDragPosition(object, event);
       objectMoveIntentRef.current = null;
       objectMoveDragRef.current = null;
+      objectMoveStartRef.current = null;
       setObjectEditPreview(null);
       return;
     }
@@ -1261,6 +1327,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     event.target.position({ x: nextArea.x, y: nextArea.y });
     objectMoveIntentRef.current = null;
     objectMoveDragRef.current = null;
+    objectMoveStartRef.current = null;
     commitObjectPatch(object.id, { area: nextArea });
   };
 
@@ -1285,29 +1352,69 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
     previewObjectPatch(object.id, { area: nextArea });
   };
 
+  const getDraggedPolygonPatch = (object: AnnotationObject, event: any): Pick<AnnotationObject, 'points' | 'area'> | null => {
+    const moveStart = objectMoveStartRef.current;
+    const pointer = getPointer(event);
+
+    if (!moveStart || moveStart.id !== object.id || !moveStart.points?.length || !pointer) {
+      return null;
+    }
+
+    const bounds = getPolygonBounds(moveStart.points);
+    const dx = clamp(pointer.x - moveStart.pointer.x, -bounds.x, imageSize.width - (bounds.x + bounds.width));
+    const dy = clamp(pointer.y - moveStart.pointer.y, -bounds.y, imageSize.height - (bounds.y + bounds.height));
+    const nextPoints = moveStart.points.map((point) => ({
+      x: Math.round(point.x + dx),
+      y: Math.round(point.y + dy)
+    }));
+
+    return {
+      points: nextPoints,
+      area: getPolygonBounds(nextPoints)
+    };
+  };
+
+  const previewMovePolygon = (object: AnnotationObject, event: any) => {
+    if (!object.points?.length || object.locked || objectMoveDragRef.current !== object.id) {
+      return;
+    }
+
+    const patch = getDraggedPolygonPatch(object, event);
+
+    if (!patch) {
+      return;
+    }
+
+    event.target.position({ x: 0, y: 0 });
+    previewObjectPatch(object.id, patch);
+  };
+
   const movePolygon = (object: AnnotationObject, event: any) => {
     if (!object.points?.length || object.locked || objectMoveDragRef.current !== object.id) {
       resetObjectDragPosition(object, event);
       objectMoveIntentRef.current = null;
       objectMoveDragRef.current = null;
+      objectMoveStartRef.current = null;
+      setObjectEditPreview(null);
       return;
     }
 
-    const bounds = getPolygonBounds(object.points);
-    const dx = clamp(event.target.x(), -bounds.x, imageSize.width - (bounds.x + bounds.width));
-    const dy = clamp(event.target.y(), -bounds.y, imageSize.height - (bounds.y + bounds.height));
-    const nextPoints = object.points.map((point) => ({
-      x: Math.round(point.x + dx),
-      y: Math.round(point.y + dy)
-    }));
+    const patch = getDraggedPolygonPatch(object, event);
+
+    if (!patch) {
+      resetObjectDragPosition(object, event);
+      objectMoveIntentRef.current = null;
+      objectMoveDragRef.current = null;
+      objectMoveStartRef.current = null;
+      setObjectEditPreview(null);
+      return;
+    }
 
     event.target.position({ x: 0, y: 0 });
     objectMoveIntentRef.current = null;
     objectMoveDragRef.current = null;
-    commitObjectPatch(object.id, {
-      points: nextPoints,
-      area: getPolygonBounds(nextPoints)
-    });
+    objectMoveStartRef.current = null;
+    commitObjectPatch(object.id, patch);
   };
 
   const movePolygonPoint = (object: AnnotationObject, pointIndex: number, event: any, shouldCommit: boolean) => {
@@ -1377,11 +1484,25 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
           const listedIndex = paintMaskObjects.findIndex((item) => item.id === object.id);
 
           if (object.type === 'polygon') {
+            const labelPosition = getPointObjectLabelPosition(object.points);
+
             return (
               <Group
                 key={object.id}
                 draggable={!object.locked && !isPolygonCorrectionMode}
                 onMouseDown={(event) => {
+                  if (polygonCorrectionDraftRef.current) {
+                    stopObjectPointerEvent(event);
+                    const didFinish = finishPolygonCorrection(event);
+
+                    if (!didFinish && isShiftCorrectionActive(event)) {
+                      leftButtonDownRef.current = true;
+                      updatePolygonCorrection(event);
+                    }
+
+                    return;
+                  }
+
                   if (isPolygonCorrectionGesture(event)) {
                     stopObjectPointerEvent(event);
                     startPolygonCorrection(event, object);
@@ -1393,7 +1514,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   onSelectObject(object.id);
                 }}
                 onClick={(event) => {
-                  if (isPolygonCorrectionGesture(event)) {
+                  if (polygonCorrectionDraftRef.current || isPolygonCorrectionGesture(event)) {
                     stopObjectPointerEvent(event);
                     return;
                   }
@@ -1409,6 +1530,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
 
                   startObjectMoveDrag(object, event);
                 }}
+                onDragMove={(event) => previewMovePolygon(object, event)}
                 onDragEnd={(event) => movePolygon(object, event)}
               >
                 <Line
@@ -1420,18 +1542,20 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   opacity={getObjectOpacity(object)}
                 />
                 <Text
-                  x={object.points[0]?.x ?? 0}
-                  y={(object.points[0]?.y ?? 0) - 18}
+                  x={labelPosition.x}
+                  y={labelPosition.y}
                   text={`${listedIndex + 1} ${object.label}`}
                   fill="#152017"
-                  fontSize={14}
-                  padding={4}
+                  fontSize={annotationLabelFontSize}
+                  padding={annotationLabelPadding}
                 />
               </Group>
             );
           }
 
           if (object.type === 'brush') {
+            const labelPosition = getPointObjectLabelPosition(object.points);
+
             return (
               <Group
                 key={object.id}
@@ -1456,12 +1580,12 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   globalCompositeOperation="source-over"
                 />
                 <Text
-                  x={object.points[0]?.x ?? 0}
-                  y={(object.points[0]?.y ?? 0) - 18}
+                  x={labelPosition.x}
+                  y={labelPosition.y}
                   text={`${listedIndex + 1} ${object.label}`}
                   fill="#d8ffe2"
-                  fontSize={14}
-                  padding={4}
+                  fontSize={annotationLabelFontSize}
+                  padding={annotationLabelPadding}
                 />
               </Group>
             );
@@ -1521,12 +1645,12 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 }}
               />
               <Text
-                x={object.area.x}
-                y={Math.max(0, object.area.y - 20)}
+                x={object.area.x + annotationLabelOffset}
+                y={Math.max(0, object.area.y - annotationLabelTopOffset)}
                 text={`${localListedObjects.filter((item) => item.type !== 'box').length + index + 1} ${object.label}`}
                 fill="#d8ffe2"
-                fontSize={14}
-                padding={4}
+                fontSize={annotationLabelFontSize}
+                padding={annotationLabelPadding}
               />
             </Group>
           );
@@ -1720,6 +1844,21 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     leftButtonDownRef.current = true;
                   }
 
+                  if (polygonCorrectionDraftRef.current) {
+                    const didFinish = finishPolygonCorrection(event);
+
+                    if (!didFinish && isShiftCorrectionActive(event)) {
+                      leftButtonDownRef.current = true;
+                      updatePolygonCorrection(event);
+                    }
+
+                    return;
+                  }
+
+                  if ((event.evt.shiftKey || isShiftPressed) && startPolygonCorrection(event)) {
+                    return;
+                  }
+
                   if (event.evt.ctrlKey || event.evt.metaKey || event.evt.button !== 0) {
                     startCanvasPan(event);
                     return;
@@ -1731,16 +1870,6 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   }
 
                   if (activeTool === 'polygon') {
-                    if (polygonCorrectionDraftRef.current) {
-                      finishPolygonCorrection(event);
-                      return;
-                    }
-
-                    if (event.evt.shiftKey || isShiftPressed) {
-                      startPolygonCorrection(event);
-                      return;
-                    }
-
                     pendingPolygonClickRef.current = getPointer(event);
                     startCanvasPan(event, false);
                     return;
@@ -1751,12 +1880,12 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   }
                 }}
                 onMouseMove={(event) => {
-                  if (activeTool === 'polygon') {
-                    if (polygonCorrectionDraftRef.current) {
-                      updatePolygonCorrection(event);
-                      return;
-                    }
+                  if (polygonCorrectionDraftRef.current) {
+                    updatePolygonCorrection(event);
+                    return;
+                  }
 
+                  if (activeTool === 'polygon') {
                     if (pendingPolygonClickRef.current) {
                       updateCanvasPan(event);
                     }
@@ -1776,15 +1905,19 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 onMouseUp={(event) => {
                   leftButtonDownRef.current = false;
 
+                  if (activeTool !== 'polygon') {
+                    const correctionDraft = polygonCorrectionDraftRef.current;
+
+                    if (correctionDraft?.hasMoved) {
+                      finishPolygonCorrection(event);
+                    }
+                  }
+
                   if (activeTool === 'polygon') {
                     const correctionDraft = polygonCorrectionDraftRef.current;
 
                     if (correctionDraft?.hasMoved) {
-                      const didFinish = finishPolygonCorrection(event);
-
-                      if (!didFinish) {
-                        updatePolygonCorrectionDraft(null);
-                      }
+                      finishPolygonCorrection(event);
                     }
 
                     if (pendingPolygonClickRef.current) {
@@ -1944,31 +2077,57 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                     (isShiftPressed ||
                       (polygonCorrectionDraft?.target === 'object' &&
                         polygonCorrectionDraft.objectId === selectedPolygonObject.id)) &&
-                    selectedPolygonObject.points.map((point, index) => (
-                      <Circle
-                        key={`${selectedPolygonObject.id}-handle-${index}`}
-                        x={point.x}
-                        y={point.y}
-                        radius={9 / canvasScale}
-                        fill="#7CFC8A"
-                        stroke="#14532d"
-                        strokeWidth={2.5 / canvasScale}
-                        listening={false}
-                      />
-                    ))}
+                    selectedPolygonObject.points.map((point, index) => {
+                      const isCorrectionStart =
+                        polygonCorrectionDraft?.target === 'object' &&
+                        polygonCorrectionDraft.objectId === selectedPolygonObject.id &&
+                        polygonCorrectionDraft.startIndex === index;
+                      const isCorrectionTarget =
+                        polygonCorrectionDraft?.target === 'object' &&
+                        polygonCorrectionDraft.objectId === selectedPolygonObject.id &&
+                        polygonCorrectionHoverIndex === index;
+
+                      return (
+                        <Circle
+                          key={`${selectedPolygonObject.id}-handle-${index}`}
+                          x={point.x}
+                          y={point.y}
+                          radius={(isCorrectionTarget ? 8 : isCorrectionStart ? 6.5 : 5.5) / canvasScale}
+                          fill={isCorrectionTarget ? '#f8fafc' : isCorrectionStart ? '#93c5fd' : '#7CFC8A'}
+                          stroke={isCorrectionTarget ? '#2563eb' : '#14532d'}
+                          strokeWidth={(isCorrectionTarget ? 3 : 2) / canvasScale}
+                          listening={false}
+                        />
+                      );
+                    })}
 
                   {polygonDraft.length > 0 && (
                     <>
-                      <Line points={polygonDraft.flatMap((point) => [point.x, point.y])} stroke="#52b5ff" strokeWidth={2} />
+                      <Line
+                        points={polygonDraft.flatMap((point) => [point.x, point.y])}
+                        stroke="#52b5ff"
+                        strokeWidth={1.5 / canvasScale}
+                      />
                       {polygonDraft.map((point, index) => (
                         <Circle
                           key={`${point.x}-${point.y}-${index}`}
                           x={point.x}
                           y={point.y}
-                          radius={isPolygonCorrectionMode ? 9 / canvasScale : 4}
-                          fill={isPolygonCorrectionMode ? '#7CFC8A' : '#52b5ff'}
+                          radius={
+                            isPolygonCorrectionMode
+                              ? (polygonCorrectionDraft?.target === 'draft' && polygonCorrectionHoverIndex === index ? 5.5 : 4) / canvasScale
+                              : 3.5 / canvasScale
+                          }
+                          fill={
+                            isPolygonCorrectionMode && polygonCorrectionDraft?.target === 'draft' && polygonCorrectionHoverIndex === index
+                              ? '#f8fafc'
+                              : isPolygonCorrectionMode
+                                ? '#7CFC8A'
+                                : '#52b5ff'
+                          }
                           stroke={isPolygonCorrectionMode ? '#14532d' : undefined}
-                          strokeWidth={isPolygonCorrectionMode ? 2.5 / canvasScale : 0}
+                          strokeWidth={isPolygonCorrectionMode ? 1.5 / canvasScale : 0}
+                          listening={false}
                         />
                       ))}
                     </>
@@ -1977,22 +2136,37 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   {polygonCorrectionDraft && (
                     <>
                       <Line
-                        points={polygonCorrectionDraft.points.flatMap((point) => [point.x, point.y])}
+                        points={[
+                          ...polygonCorrectionDraft.points,
+                          ...(polygonCorrectionPreviewPoint ? [polygonCorrectionPreviewPoint] : [])
+                        ].flatMap((point) => [point.x, point.y])}
                         stroke="#f8fafc"
-                        strokeWidth={2}
-                        dash={[6, 6]}
+                        strokeWidth={2 / canvasScale}
+                        dash={[7 / canvasScale, 6 / canvasScale]}
                       />
                       {polygonCorrectionDraft.points.map((point, index) => (
                         <Circle
                           key={`correction-${point.x}-${point.y}-${index}`}
                           x={point.x}
                           y={point.y}
-                          radius={3.5}
+                          radius={(index === 0 || index === polygonCorrectionDraft.points.length - 1 ? 3 : 2.25) / canvasScale}
                           fill="#f8fafc"
                           stroke="#334155"
-                          strokeWidth={1}
+                          strokeWidth={1 / canvasScale}
+                          listening={false}
                         />
                       ))}
+                      {polygonCorrectionPreviewPoint && (
+                        <Circle
+                          x={polygonCorrectionPreviewPoint.x}
+                          y={polygonCorrectionPreviewPoint.y}
+                          radius={(polygonCorrectionHoverIndex !== null ? 4.5 : 3) / canvasScale}
+                          fill={polygonCorrectionHoverIndex !== null ? '#bfdbfe' : '#f8fafc'}
+                          stroke="#1d4ed8"
+                          strokeWidth={1.5 / canvasScale}
+                          listening={false}
+                        />
+                      )}
                     </>
                   )}
 
@@ -2003,13 +2177,13 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 {!imageSrc && 'В проекте пока нет изображения. Добавьте файл через меню или страницу загрузки.'}
                 {imageSrc && activeTool === 'box' && 'Протяните мышью, чтобы создать прямоугольник. Колесо меняет масштаб. Ctrl/Cmd + протяжка по объекту перемещает его.'}
                 {imageSrc && activeTool === 'polygon' && 'Кликайте по контуру объекта. Shift исправляет точки. Колесо меняет масштаб. Ctrl/Cmd + протяжка по объекту перемещает его.'}
-                {imageSrc && !activeTool && 'Колесо мыши меняет масштаб. Перетяните пустую область, чтобы сдвинуть изображение. Ctrl/Cmd + протяжка по объекту перемещает его.'}
+                {imageSrc && !activeTool && 'Колесо мыши меняет масштаб. Перетяните пустую область, чтобы сдвинуть изображение. Shift исправляет точки полигона. Ctrl/Cmd + протяжка по объекту перемещает его.'}
               </div>
             </div>
           </div>
 
           <aside className="flex max-h-full min-h-0 flex-col gap-3 overflow-y-auto border-l border-slate-800 bg-slate-950/80 p-3 custom-scroll">
-            <section className="flex min-h-[120px] flex-[1_0_120px] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
+            <section className="flex min-h-[190px] flex-[1.6_0_190px] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
               <div className="border-b border-slate-800 bg-slate-950/80 px-4 py-3">
                 <div className="flex items-center justify-between text-sm font-semibold text-slate-100">
                   <span>Список объектов</span>
@@ -2179,7 +2353,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
               </div>
             </section>
 
-            <section className="flex min-h-[260px] flex-[1.35_0_260px] flex-col rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
+            <section className="flex min-h-[300px] flex-[1.25_0_300px] flex-col rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div>
                   <div className="text-sm font-semibold text-slate-100">Классы</div>
@@ -2187,7 +2361,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 </div>
               </div>
 
-              <div className="mt-3 max-h-[clamp(84px,20vh,280px)] space-y-2 overflow-y-auto pr-1 custom-scroll">
+              <div className="mt-2 min-h-[112px] flex-1 space-y-2 overflow-y-auto pr-1 custom-scroll">
                 {!classList.length && (
                   <div className="rounded-xl border border-dashed border-slate-800 bg-slate-950 px-3 py-3 text-sm text-slate-500">
                     Нет классов
@@ -2196,8 +2370,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 {classList.map((item) => (
                   <div
                     key={item.name}
-                    className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 ${
-                      activeLabel === item.name ? 'border-brand-500 bg-brand-500/10' : 'border-slate-800 bg-slate-950'
+                    className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 shadow-[inset_0_1px_0_rgba(148,163,184,0.04)] ${
+                      activeLabel === item.name
+                        ? 'border-brand-500/50 bg-slate-950 ring-1 ring-brand-500/25'
+                        : 'border-slate-800 bg-slate-950'
                     }`}
                   >
                     <button type="button" onClick={() => onSelectClass(item.name)} className="min-w-0 flex-1 bg-transparent text-left">
