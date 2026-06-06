@@ -558,10 +558,10 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   }, []);
 
   const imageAspectRatio = imageSize.height / imageSize.width;
-  const availableStageWidth = Math.max(320, stageBounds.width);
-  const availableStageHeight = Math.max(240, stageBounds.height);
-  const stageWidth = Math.round(Math.min(availableStageWidth, availableStageHeight / imageAspectRatio));
-  const stageHeight = Math.round(stageWidth * imageAspectRatio);
+  const availableStageWidth = Math.max(1, stageBounds.width);
+  const availableStageHeight = Math.max(1, stageBounds.height);
+  const stageWidth = Math.max(1, Math.round(Math.min(availableStageWidth, availableStageHeight / imageAspectRatio)));
+  const stageHeight = Math.max(1, Math.round(stageWidth * imageAspectRatio));
   const baseScale = stageWidth / imageSize.width;
   const canvasScale = baseScale * zoom;
   const hasActiveClass = Boolean(activeLabel.trim());
@@ -1536,22 +1536,8 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
   };
 
   return (
-    <div className="flex h-[clamp(700px,calc(100vh-7rem),880px)] min-w-0 flex-col overflow-hidden rounded-[24px] border border-slate-800 bg-slate-900/95 shadow-[0_24px_80px_rgba(15,23,42,0.38)]">
-      {activeTool === 'polygon' && (
-        <div className="flex items-center justify-end border-b border-slate-800 bg-slate-950/90 px-5 py-3">
-          <button
-            type="button"
-            onClick={finishPolygonDraft}
-            disabled={polygonDraft.length < 3}
-            className="h-9 rounded-lg bg-brand-500 px-5 text-sm font-semibold text-white transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
-            title="Завершить полигон"
-          >
-            Done
-          </button>
-        </div>
-      )}
-
-      <div className="relative z-30 flex flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-900 px-4 py-3 text-slate-300">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden border-t border-slate-800 bg-slate-900/95">
+      <div className="relative z-30 flex shrink-0 flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-900 px-4 py-2.5 text-slate-300">
         <div className="flex items-center gap-2">
           <button
             ref={menuButtonRef}
@@ -1618,13 +1604,28 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
           />
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenImagePicker}
-          className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs text-slate-200 transition hover:border-brand-500/40 hover:text-white"
-        >
-          {imageName}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenImagePicker}
+            className="max-w-[min(24vw,280px)] truncate rounded-full border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs text-slate-200 transition hover:border-brand-500/40 hover:text-white"
+            title={imageName}
+          >
+            {imageName}
+          </button>
+
+          {activeTool === 'polygon' && (
+            <button
+              type="button"
+              onClick={finishPolygonDraft}
+              disabled={polygonDraft.length < 3}
+              className="rounded-lg bg-brand-500 px-3 py-1 text-xs font-semibold text-white transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+              title="Завершить полигон"
+            >
+              Done
+            </button>
+          )}
+        </div>
 
         {isMenuOpen && (
           <div
@@ -1666,7 +1667,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
         )}
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-[62px_minmax(0,1fr)] overflow-hidden rounded-b-[24px]">
+      <div className="grid min-h-0 flex-1 grid-cols-[62px_minmax(0,1fr)] overflow-hidden">
         <div className="border-r border-slate-800 bg-slate-950/95 py-4">
           <div className="flex flex-col items-center gap-3">
             {[
@@ -1704,8 +1705,8 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
           </div>
         </div>
 
-        <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_292px]">
-          <div className="min-h-0 overflow-hidden bg-slate-900 p-3">
+        <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_clamp(320px,22vw,430px)]">
+          <div className="min-h-0 overflow-hidden bg-slate-900 p-2">
             <div
               ref={containerRef}
               className="relative flex h-full min-h-0 items-center justify-center overflow-hidden rounded-[18px] border border-slate-800 bg-slate-950"
@@ -2007,8 +2008,8 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
             </div>
           </div>
 
-          <aside className="flex max-h-full min-h-0 flex-col gap-2 overflow-y-auto border-l border-slate-800 bg-slate-950/80 p-2 custom-scroll">
-            <section className="shrink-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
+          <aside className="flex max-h-full min-h-0 flex-col gap-3 overflow-y-auto border-l border-slate-800 bg-slate-950/80 p-3 custom-scroll">
+            <section className="flex min-h-[120px] flex-[1_0_120px] flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
               <div className="border-b border-slate-800 bg-slate-950/80 px-4 py-3">
                 <div className="flex items-center justify-between text-sm font-semibold text-slate-100">
                   <span>Список объектов</span>
@@ -2016,7 +2017,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 </div>
               </div>
 
-              <div className="max-h-[160px] overflow-y-auto p-2 custom-scroll">
+              <div className="min-h-[72px] flex-1 overflow-y-auto p-2 custom-scroll">
                 {listedObjects.map((object, index) => {
                   const isSelected = selectedObjectId === object.id;
                   const isLocked = Boolean(object.locked);
@@ -2178,7 +2179,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
               </div>
             </section>
 
-            <section className="shrink-0 rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
+            <section className="flex min-h-[260px] flex-[1.35_0_260px] flex-col rounded-2xl border border-slate-800 bg-slate-900/90 px-4 py-3 shadow-[inset_0_1px_0_rgba(148,163,184,0.06)]">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div>
                   <div className="text-sm font-semibold text-slate-100">Классы</div>
@@ -2186,7 +2187,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 </div>
               </div>
 
-              <div className="mt-3 max-h-[220px] space-y-2 overflow-y-auto pr-1 custom-scroll">
+              <div className="mt-3 max-h-[clamp(84px,20vh,280px)] space-y-2 overflow-y-auto pr-1 custom-scroll">
                 {!classList.length && (
                   <div className="rounded-xl border border-dashed border-slate-800 bg-slate-950 px-3 py-3 text-sm text-slate-500">
                     Нет классов
@@ -2227,7 +2228,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 ))}
               </div>
 
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex shrink-0 gap-2">
                 <input
                   value={newClassName}
                   onChange={(event) => onNewClassNameChange(event.target.value)}
@@ -2239,7 +2240,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                 </button>
               </div>
 
-              <details className="group mt-3 rounded-xl border border-slate-800 bg-slate-950">
+              <details className="group mt-3 shrink-0 rounded-xl border border-slate-800 bg-slate-950">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-slate-100">
                   <span className="flex min-w-0 items-center gap-2">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-500/15 text-brand-100">
@@ -2250,7 +2251,7 @@ const WorkspaceCanvas: React.FC<WorkspaceCanvasProps> = ({
                   <ChevronDown size={16} className="shrink-0 text-slate-400 transition group-open:rotate-180" />
                 </summary>
 
-                <div className="border-t border-slate-800 px-3 pb-3 pt-2">
+                <div className="max-h-[min(42vh,420px)] overflow-y-auto border-t border-slate-800 px-3 pb-3 pt-2 custom-scroll">
                   <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">Классы</div>
                   <div className="mt-2 grid gap-1.5">
                     {!classList.length && <div className="rounded-lg bg-slate-900/70 px-2.5 py-2 text-xs text-slate-500">Нет классов</div>}

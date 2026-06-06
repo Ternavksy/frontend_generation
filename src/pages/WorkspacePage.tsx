@@ -1297,9 +1297,9 @@ const WorkspacePage = () => {
         className="hidden"
       />
 
-      <div className="mx-auto max-w-[1720px] px-4 pb-6 pt-4">
-        <div className="min-w-0">
-          <section className="min-h-0 min-w-0">
+      <div className="h-full min-h-0 min-w-0">
+        <div className="h-full min-h-0 min-w-0">
+          <section className="h-full min-h-0 min-w-0">
             <WorkspaceCanvas
               activeTool={workspace.activeTool}
               onToolChange={(tool) =>
